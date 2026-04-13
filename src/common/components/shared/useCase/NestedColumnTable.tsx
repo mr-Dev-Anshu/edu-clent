@@ -17,7 +17,7 @@ interface StudentResult {
   id: string;
   name: string;
   rollNo: string;
-  results: SubjectResult[]; // This is our nested array
+  results: SubjectResult[]; 
   totalPercentage: number;
   status: "complete" | "pending";
 }
@@ -51,7 +51,6 @@ const DUMMY_RESULTS: StudentResult[] = [
 ];
 
 export const StudentResultTable = () => {
-  // 3. Define Columns with "Nested" rendering
   const columns: TableColumn<StudentResult>[] = [
     {
       key: "name",
@@ -72,13 +71,11 @@ export const StudentResultTable = () => {
         const results = val as SubjectResult[];
         return (
           <div className="flex flex-col border rounded-lg overflow-hidden border-slate-100">
-            {/* Header for nested items */}
             <div className="grid grid-cols-3 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase text-slate-400 border-b">
               <span>Subject</span>
               <span className="text-center">Marks</span>
               <span className="text-right">Grade</span>
             </div>
-            {/* Rows for nested items */}
             {results.map((item, idx) => (
               <div 
                 key={idx} 
