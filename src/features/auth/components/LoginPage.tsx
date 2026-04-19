@@ -21,9 +21,13 @@ export default function LoginPage() {
 
   const { mutateAsync: login } = useLogin();
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { email: string; password: string }) => {
     try {
-      const response = await login(data);
+      const formData = new FormData();
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+
+      const response = await login(formData);
 
       console.log("Login Success:", response);
 
