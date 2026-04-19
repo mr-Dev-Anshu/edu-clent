@@ -4,8 +4,41 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, Landmark, ShieldCheck } from "lucide-react";
 import { FormInput } from "@/common/components/shared/FormInput";
+import { useForm } from "react-hook-form";
+import { useLogin } from "../hooks/useAuthApi";
 
 export default function LoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const { mutateAsync: login } = useLogin();
+
+  const onSubmit = async (data: any) => {
+    try {
+      const response = await login(data);
+
+      console.log("Login Success:", response);
+
+      // Example token save
+      localStorage.setItem("token", response?.token);
+
+      // Example redirect
+      // router.push("/dashboard");
+    } catch (error: any) {
+      console.error(
+        "Login Failed:",
+        error?.response?.data?.message || error.message,
+      );
+    }
+  };
 
   return (
     <main className="flex min-h-screen bg-[#f7f9fb] text-[#191c1e]">
@@ -29,14 +62,25 @@ export default function LoginPage() {
             </p>
           </header>
 
-          <form  className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <FormInput
               label="Email Address"
               id="email"
               type="email"
               placeholder="admin@sovereign.edu"
               className="uppercase tracking-widest text-[10px]"
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^\S+@\S+$/i,
+                  message: "Enter a valid email",
+                },
+              })}
             />
+
+            {errors.email && (
+              <p className="text-xs text-red-500">{errors.email.message}</p>
+            )}
 
             <div className="space-y-1">
               <div className="flex justify-between items-center -mb-1">
@@ -55,13 +99,28 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Minimum 6 characters required",
+                  },
+                })}
               />
+
+              {errors.password && (
+                <p className="text-xs text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
+
             <button
               className="w-full h-10 bg-linear-to-br from-[#022448] to-[#1e3a5f] text-white font-medium text-sm rounded-lg shadow-lg shadow-[#022448]/10 hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2"
               type="submit"
+              disabled={isSubmitting}
             >
-              Login to Portal
+              {isSubmitting ? "Logging in..." : "Login to Portal"}
               <ArrowRight size={16} />
             </button>
           </form>
