@@ -1,13 +1,20 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
-import React from "react";
 import Link from "next/link";
-import { ArrowRight, Landmark, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation"; 
+import { ArrowRight, Landmark } from "lucide-react";
 import { FormInput } from "@/common/components/shared/FormInput";
 import { useForm } from "react-hook-form";
+
+import { useAppDispatch } from "@/hooks/useStore";
+import { setCredentials } from "../slice/index";
 import { useLogin } from "../hooks/useAuthApi";
+import { UserData } from "../types/index"; 
 
 export default function LoginPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { mutateAsync: login } = useLogin();
+
   const {
     register,
     handleSubmit,
@@ -19,27 +26,50 @@ export default function LoginPage() {
     },
   });
 
-  const { mutateAsync: login } = useLogin();
-
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       const formData = new FormData();
       formData.append('email', data.email);
       formData.append('password', data.password);
-
+      
       const response = await login(formData);
+      const userData: UserData = response.data;
 
-      console.log("Login Success:", response);
+      dispatch(setCredentials({ 
+        user: userData, 
+        token: userData.token 
+      }));
 
-      // Example token save
-      localStorage.setItem("token", response?.token);
+      const roleType = userData.roles[0]?.roleType;
+      const hasTenant = !!userData.tenant;
 
-      // Example redirect
-      // router.push("/dashboard");
+      switch (roleType) {
+      case "admin":
+        router.push("/admin/dashboard");
+        break;
+
+      case "staff":
+        if (!hasTenant) throw new Error("Staff must belong to a tenant");
+        router.push("/staff/dashboard");
+        break;
+
+      case "portal":
+        if (!hasTenant) throw new Error("Portal user must belong to a tenant");
+        router.push("/portal/dashboard");
+        break;
+
+      case "platform":
+        if (!hasTenant) throw new Error("Platform manager must belong to a tenant");
+        router.push("/platform/dashboard");
+        break;
+
+      default:
+        router.push("/dashboard"); 
+    }
     } catch (error: any) {
       console.error(
         "Login Failed:",
-        error?.response?.data?.message || error.message,
+        error?.response?.data?.message || error.message
       );
     }
   };
@@ -72,7 +102,6 @@ export default function LoginPage() {
               id="email"
               type="email"
               placeholder="admin@sovereign.edu"
-              className="uppercase tracking-widest text-[10px]"
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -81,111 +110,46 @@ export default function LoginPage() {
                 },
               })}
             />
-
             {errors.email && (
-              <p className="text-xs text-red-500">{errors.email.message}</p>
+              <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>
             )}
 
             <div className="space-y-1">
-              <div className="flex justify-between items-center -mb-1">
-                <label className="text-sm font-medium text-slate-700">
-                  Password
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-[13px] font-medium text-[#226296] hover:text-[#022448] transition-colors"
-                >
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-slate-700">Password</label>
+                <Link href="/forgot-password"  className="text-[13px] text-[#226296] hover:underline">
                   Forgot password?
                 </Link>
               </div>
               <FormInput
-                label=""
-                id="password"
+                label={""}
+                 id="password"
                 type="password"
                 placeholder="••••••••"
                 {...register("password", {
                   required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Minimum 6 characters required",
-                  },
-                })}
-              />
-
+                  minLength: { value: 6, message: "Min 6 chars required" },
+                })}              />
               {errors.password && (
-                <p className="text-xs text-red-500">
-                  {errors.password.message}
-                </p>
+                <p className="text-xs text-red-500 font-medium">{errors.password.message}</p>
               )}
             </div>
 
             <button
-              className="w-full h-10 bg-linear-to-br from-[#022448] to-[#1e3a5f] text-white font-medium text-sm rounded-lg shadow-lg shadow-[#022448]/10 hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2"
+              className="w-full h-11 bg-[#022448] text-white font-medium rounded-lg hover:bg-[#022448]/90 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
               type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Logging in..." : "Login to Portal"}
+              {isSubmitting ? "Authenticating..." : "Login to Portal"}
               <ArrowRight size={16} />
             </button>
           </form>
 
-          <footer className="pt-8 flex justify-between items-center border-t border-slate-100">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-[#43474e]">
-              © 2024 Sovereign Education
-            </p>
-            <div className="flex gap-4">
-              <Link
-                href="#"
-                className="text-[10px] font-medium uppercase tracking-widest text-[#43474e] hover:text-[#022448]"
-              >
-                Support
-              </Link>
-              <Link
-                href="#"
-                className="text-[10px] font-medium uppercase tracking-widest text-[#43474e] hover:text-[#022448]"
-              >
-                Privacy
-              </Link>
-            </div>
-          </footer>
+          
         </div>
       </section>
 
-      <section className="hidden md:flex w-1/2 bg-[#1e3a5f] relative overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[#022448]/60 backdrop-blur-[2px] z-10" />
-          <img
-            className="w-full h-full object-cover grayscale opacity-40"
-            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80"
-            alt="Architecture"
-          />
-        </div>
-
-        <div className="relative z-20 flex flex-col justify-end p-16 lg:p-24 h-full w-full">
-          <div className="max-w-xl space-y-6">
-            <div className="w-12 h-1 bg-white opacity-20" />
-            <div className="space-y-4">
-              <p className="text-3xl lg:text-4xl font-medium tracking-tight text-white leading-tight">
-                The Sovereign Workspace: Empowering Educational Leadership
-              </p>
-              <footer className="flex items-center gap-3">
-                <ShieldCheck className="text-white/60" size={20} />
-                <cite className="not-italic text-sm font-medium text-white/60 uppercase tracking-widest">
-                  Architecting Academic Excellence
-                </cite>
-              </footer>
-            </div>
-
-            <div className="flex gap-2 pt-8">
-              <span className="w-2 h-2 rounded-full bg-white" />
-              <span className="w-2 h-2 rounded-full bg-white/20" />
-              <span className="w-2 h-2 rounded-full bg-white/20" />
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute top-[-10%] right-[-10%] w-100 h-100 rounded-full border border-white/5 pointer-events-none" />
-        <div className="absolute bottom-[-5%] right-[5%] w-50 h-50 rounded-full border border-white/10 pointer-events-none" />
+      <section className="hidden md:flex w-1/2 bg-[#1e3a5f] relative">
       </section>
     </main>
   );

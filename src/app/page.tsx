@@ -1,6 +1,5 @@
 "use client"; 
 import { useEffect } from "react";
-import ComponentShowcase from "@/common/components/shared/UseCase";
 import LoginPage from "@/features/auth/components/LoginPage";
 
 export default function Home() {
@@ -17,8 +16,7 @@ export default function Home() {
 
   return (
     <div>
-      <LoginPage/>
-      {/* <ComponentShowcase /> */}
+     this is Home page 
     </div>
   );
 }
