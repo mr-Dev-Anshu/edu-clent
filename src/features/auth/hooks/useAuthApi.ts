@@ -1,0 +1,18 @@
+import { useMutation } from "@tanstack/react-query";
+import * as api from "@/api";
+
+export const useLogin = () => {
+  return useMutation({
+    mutationKey: ["login"],
+    mutationFn: (data: FormData) => api.login(data),
+    retry: 0,
+  });
+};
+
+export const useLogout = () => {
+  return useMutation({
+    mutationKey: ["logout"],
+    mutationFn: () => api.logout(),
+    retry: 0,
+  });
+};
