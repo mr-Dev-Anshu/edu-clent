@@ -1,7 +1,6 @@
 "use client";
 import React from 'react';
 
-import { redirect } from 'next/navigation';
 import { useAppSelector } from '@/hooks/useStore';
 import { selectAuthUser } from '@/features/auth/slice';
 import Sidebar from '@/common/components/main/Sidebar';

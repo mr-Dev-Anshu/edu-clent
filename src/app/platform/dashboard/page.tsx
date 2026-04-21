@@ -2,7 +2,7 @@
 import React from 'react'
 import { useAppSelector } from '@/hooks/useStore'
 import { selectAuthUser, selectPermissions } from '@/features/auth/slice'
-const Page = () => {
+const DashboardPage = () => {
       const user  = useAppSelector(selectAuthUser) ;
       const permission = useAppSelector(selectPermissions)
         console.log(permission)
@@ -13,4 +13,4 @@ const Page = () => {
   )
 }
 
-export default Page
+export default DashboardPage
