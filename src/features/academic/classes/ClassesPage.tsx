@@ -54,15 +54,23 @@ export function ClassesPage() {
   const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm()
 
   const totalClasses  = classes.length
-  const totalSections = useMemo(() =>
-    classes.reduce((sum, c) => sum + c.sections.length, 0),
-    [classes]
-  )
+ const totalSections = useMemo(() =>
+  classes.reduce((sum, c) => sum + (c.sections?.length || 0), 0),
+  [classes]
+)
   const avgStudents = useMemo(() => {
-    if (totalSections === 0) return 0
-    const allStudents = classes.reduce((sum, c) => sum + c.totalStudents, 0)
-    return Math.round(allStudents / totalSections)
-  }, [classes, totalSections])
+  const totalSections = classes.reduce(
+    (sum, c) => sum + (c.sections?.length || 0),
+    0
+  )
+
+  const allStudents = classes.reduce(
+    (sum, c) => sum + (c.totalStudents || 0),
+    0
+  )
+
+  return totalSections ? Math.round(allStudents / totalSections) : 0
+}, [classes])
 
   const handleEdit = (classData: ClassRow) => {
     setSelected(classData)
@@ -108,7 +116,7 @@ export function ClassesPage() {
       width: '200px',
       render: (_, row) => (
         <div className='flex flex-wrap gap-1'>
-          {row.sections.slice(0, 3).map(s => (
+          {row.sections?.slice(0, 3).map(s => (
             <span
               key={s.id}
               className='px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700 font-medium'
@@ -116,7 +124,7 @@ export function ClassesPage() {
               {s.name}
             </span>
           ))}
-          {row.sections.length > 3 && (
+          {row.sections?.length > 3 && (
             <span className='text-xs text-slate-400'>+{row.sections.length - 3}</span>
           )}
         </div>
@@ -128,10 +136,10 @@ export function ClassesPage() {
       width: '160px',
       render: (_, row) => (
         <div className='flex -space-x-2'>
-          {row.teachers.slice(0, 3).map(t => (
+          {row.teachers?.slice(0, 3).map(t => (
             <AvatarCircle key={t.id} name={t.name} imageUrl={t.avatarUrl} size='sm' />
           ))}
-          {row.teachers.length > 3 && (
+          {row.teachers?.length > 3 && (
             <span className='text-xs text-slate-500 ml-3'>+{row.teachers.length - 3}</span>
           )}
         </div>
