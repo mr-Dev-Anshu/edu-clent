@@ -1,40 +1,39 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import ReactQueryProvider from "@/providers/ReactQueryProvider";
-import ReduxProvider from "@/providers/ReduxProviders";
+import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css"
+import Providers from "./Providers"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: "EDU",
-  description: "Saas app`",
-};
+  description: "Saas app",
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ReduxProvider>
-          <ReactQueryProvider>
+        <Providers>
           {children}
-        </ReactQueryProvider>
-        </ReduxProvider>
+        </Providers>
       </body>
     </html>
-  );
+  )
 }

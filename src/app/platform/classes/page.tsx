@@ -1,11 +1,6 @@
-import React from 'react'
 
-const ClassReportsPage = () => {
-  return (
-    <div>
-      
-    </div>
-  )
+import { ClassesPage } from '@/features/academic/classes/ClassesPage'
+
+export default function ClassesRoute() {
+  return <ClassesPage />
 }
-
-export default ClassReportsPage
