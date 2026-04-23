@@ -51,53 +51,50 @@ export function ClassesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
 
-  const { data: classes = [], isLoading, refetch } = classesHook.useData();
+  // ✅ fetchPage with page & limit — Anshu bhaiya ka requirement
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  const {
+    data: paginatedResponse,
+    isLoading,
+    refetch,
+  } = classesHook.usePaginatedData(page, limit);
+
+  const classes = paginatedResponse?.data ?? [];
+  const total   = paginatedResponse?.meta?.total ?? 0;
+
   const { mutateAsync: deleteClass } = classesHook.useRemove();
 
   const {
     paginated,
-    total,
-    page,
-    pageSize,
     query,
     filters,
     sort,
-    setPage,
     handleSearch,
     handleFilter,
     handleSort,
     resetFilters,
   } = useDataTable<ClassRow>({
     data: classes,
-    pageSize: 10,
+    pageSize: limit,
     searchKeys: ["name"],
   });
 
-  const { confirm, isOpen, options, handleConfirm, handleCancel } =
-    useConfirm();
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
-  const totalClasses = classes.length;
+  const totalClasses = total;
 
   const totalSections = useMemo(
-    () => classes.reduce((sum, c) => sum + (c.sections?.length || 0), 0),
-    [classes],
+    () => classes.reduce((sum, c) => sum + (c.sections?.length ?? 0), 0),
+    [classes]
   );
 
   const avgStudents = useMemo(() => {
-    const totalSectionCount = classes.reduce(
-      (sum, c) => sum + (c.sections?.length || 0),
-      0,
-    );
-
-    const totalStudents = classes.reduce(
-      (sum, c) => sum + (c.totalStudents || 0),
-      0,
-    );
-
-    return totalSectionCount
-      ? Math.round(totalStudents / totalSectionCount)
-      : 0;
-  }, [classes]);
+    if (totalSections === 0) return 0;
+    const allStudents = classes.reduce((sum, c) => sum + (c.totalStudents ?? 0), 0);
+    return Math.round(allStudents / totalSections);
+  }, [classes, totalSections]);
 
   const handleEdit = (classData: ClassRow) => {
     setSelected(classData);
@@ -112,8 +109,7 @@ export function ClassesPage() {
   const handleDelete = (classData: ClassRow) => {
     confirm({
       title: `Delete "${classData.name}"?`,
-      description:
-        "This will permanently delete the class and all its sections.",
+      description: "This will permanently delete the class and all its sections.",
       confirmLabel: "Yes, Delete",
       variant: "danger",
       onConfirm: async () => {
@@ -143,7 +139,7 @@ export function ClassesPage() {
       width: "200px",
       render: (_, row) => (
         <div className="flex flex-wrap gap-1">
-          {row.sections?.slice(0, 3).map((s) => (
+          {(row.sections ?? []).slice(0, 3).map((s) => (
             <span
               key={s.id}
               className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700 font-medium"
@@ -151,10 +147,9 @@ export function ClassesPage() {
               {s.name}
             </span>
           ))}
-
-          {row.sections?.length > 3 && (
+          {(row.sections ?? []).length > 3 && (
             <span className="text-xs text-slate-400">
-              +{row.sections.length - 3}
+              +{(row.sections ?? []).length - 3}
             </span>
           )}
         </div>
@@ -166,7 +161,7 @@ export function ClassesPage() {
       width: "160px",
       render: (_, row) => (
         <div className="flex -space-x-2">
-          {row.teachers?.slice(0, 3).map((t) => (
+          {(row.teachers ?? []).slice(0, 3).map((t) => (
             <AvatarCircle
               key={t.id}
               name={t.name}
@@ -174,10 +169,9 @@ export function ClassesPage() {
               size="sm"
             />
           ))}
-
-          {row.teachers?.length > 3 && (
+          {(row.teachers ?? []).length > 3 && (
             <span className="text-xs text-slate-500 ml-3">
-              +{row.teachers.length - 3}
+              +{(row.teachers ?? []).length - 3}
             </span>
           )}
         </div>
@@ -220,7 +214,6 @@ export function ClassesPage() {
             <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
               Bulk Import
             </button>
-
             <button
               onClick={() => setAddOpen(true)}
               className="h-9 px-4 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#152d4a] transition-colors"
@@ -232,11 +225,9 @@ export function ClassesPage() {
       />
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <MetricCard data={{ label: "TOTAL CLASSES", value: totalClasses }} />
-        <MetricCard data={{ label: "TOTAL SECTIONS", value: totalSections }} />
-        <MetricCard
-          data={{ label: "AVG STUDENTS/SECTION", value: avgStudents }}
-        />
+        <MetricCard data={{ label: "TOTAL CLASSES",        value: totalClasses  }} />
+        <MetricCard data={{ label: "TOTAL SECTIONS",       value: totalSections }} />
+        <MetricCard data={{ label: "AVG STUDENTS/SECTION", value: avgStudents   }} />
       </div>
 
       <DataTable
@@ -244,7 +235,7 @@ export function ClassesPage() {
         columns={columns as unknown as TableColumn<Record<string, unknown>>[]}
         total={total}
         page={page}
-        pageSize={pageSize}
+        pageSize={limit}
         onPageChange={setPage}
         sort={sort}
         onSort={handleSort as (key: string) => void}
@@ -254,9 +245,7 @@ export function ClassesPage() {
           <FilterBar
             fields={CLASS_FILTER_FIELDS}
             values={filters as Record<string, string>}
-            onFilter={(key, value) =>
-              handleFilter(key as keyof ClassRow, value)
-            }
+            onFilter={(key, value) => handleFilter(key as keyof ClassRow, value)}
             onSearch={handleSearch}
             searchValue={query}
             onReset={resetFilters}
