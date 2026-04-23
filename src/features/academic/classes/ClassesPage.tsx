@@ -18,6 +18,7 @@ import { ClassActionsMenu } from "./components/ClassActionsMenu";
 import EditClassModal from "./components/EditClassModal";
 import ManageSectionsModal from "./components/ManageSectionsModal";
 import { classesHook } from "./hooks/useClasses";
+import { useClassesWithSections } from "./hooks/useClassesWithSections";
 import { ClassRow } from "./types";
 
 const CATEGORY_FILTER_OPTIONS = [
@@ -51,20 +52,14 @@ export function ClassesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
 
-  // ✅ fetchPage with page & limit — Anshu bhaiya ka requirement
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
-  const {
-    data: paginatedResponse,
-    isLoading,
-    refetch,
-  } = classesHook.usePaginatedData(page, limit);
-
-  const classes = paginatedResponse?.data ?? [];
-  const total   = paginatedResponse?.meta?.total ?? 0;
-
   const { mutateAsync: deleteClass } = classesHook.useRemove();
+
+  const { data: classes = [], isLoading, refetch } = useClassesWithSections();
+
+  const total = classes.length;
 
   const {
     paginated,
@@ -81,18 +76,24 @@ export function ClassesPage() {
     searchKeys: ["name"],
   });
 
-  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
+  const { confirm, isOpen, options, handleConfirm, handleCancel } =
+    useConfirm();
 
   const totalClasses = total;
 
   const totalSections = useMemo(
     () => classes.reduce((sum, c) => sum + (c.sections?.length ?? 0), 0),
-    [classes]
+    [classes],
   );
 
   const avgStudents = useMemo(() => {
     if (totalSections === 0) return 0;
-    const allStudents = classes.reduce((sum, c) => sum + (c.totalStudents ?? 0), 0);
+
+    const allStudents = classes.reduce(
+      (sum, c) => sum + (c.totalStudents ?? 0),
+      0,
+    );
+
     return Math.round(allStudents / totalSections);
   }, [classes, totalSections]);
 
@@ -109,7 +110,8 @@ export function ClassesPage() {
   const handleDelete = (classData: ClassRow) => {
     confirm({
       title: `Delete "${classData.name}"?`,
-      description: "This will permanently delete the class and all its sections.",
+      description:
+        "This will permanently delete the class and all its sections.",
       confirmLabel: "Yes, Delete",
       variant: "danger",
       onConfirm: async () => {
@@ -126,8 +128,10 @@ export function ClassesPage() {
       width: "220px",
       render: (_, row) => (
         <div>
-          <p className="font-medium text-sm text-slate-800">{row.name}</p>
-          <p className="text-xs text-slate-400 capitalize">
+          <p className="font-medium text-[14px] tracking-tight text-slate-800">
+            {row.name}
+          </p>
+          <p className="text-xs text-slate-400 capitalize mt-0.5">
             {row.category?.replace(/_/g, " ")}
           </p>
         </div>
@@ -136,19 +140,20 @@ export function ClassesPage() {
     {
       key: "sections",
       header: "SECTIONS",
-      width: "200px",
+      width: "220px",
       render: (_, row) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {(row.sections ?? []).slice(0, 3).map((s) => (
             <span
               key={s.id}
-              className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700 font-medium"
+              className="px-2.5 py-1 text-xs rounded-full bg-[#EEF4FF] text-[#1E3A5F] font-medium"
             >
               {s.name}
             </span>
           ))}
+
           {(row.sections ?? []).length > 3 && (
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 self-center">
               +{(row.sections ?? []).length - 3}
             </span>
           )}
@@ -169,11 +174,6 @@ export function ClassesPage() {
               size="sm"
             />
           ))}
-          {(row.teachers ?? []).length > 3 && (
-            <span className="text-xs text-slate-500 ml-3">
-              +{(row.teachers ?? []).length - 3}
-            </span>
-          )}
         </div>
       ),
     },
@@ -200,7 +200,7 @@ export function ClassesPage() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-[#F7F9FB] p-6 space-y-6">
       <PageHeader
         title="Classes & Sections"
         description="Manage academic structures and student distribution."
@@ -211,12 +211,13 @@ export function ClassesPage() {
         ]}
         actions={
           <>
-            <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            <button className="h-9 px-4 rounded-lg bg-white text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200/40 hover:bg-slate-50 transition-all">
               Bulk Import
             </button>
+
             <button
               onClick={() => setAddOpen(true)}
-              className="h-9 px-4 rounded-lg bg-[#1E3A5F] text-white text-sm font-medium hover:bg-[#152d4a] transition-colors"
+              className="h-9 px-4 rounded-lg bg-linear-to-br from-[#022448] to-[#1E3A5F] text-white text-sm font-medium shadow-sm hover:shadow-md transition-all"
             >
               + Add New Class
             </button>
@@ -224,35 +225,44 @@ export function ClassesPage() {
         }
       />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <MetricCard data={{ label: "TOTAL CLASSES",        value: totalClasses  }} />
-        <MetricCard data={{ label: "TOTAL SECTIONS",       value: totalSections }} />
-        <MetricCard data={{ label: "AVG STUDENTS/SECTION", value: avgStudents   }} />
+      <div className="grid grid-cols-3 gap-4">
+        <MetricCard data={{ label: "TOTAL CLASSES", value: totalClasses }} />
+        <MetricCard data={{ label: "TOTAL SECTIONS", value: totalSections }} />
+        <MetricCard
+          data={{
+            label: "AVG STUDENTS/SECTION",
+            value: avgStudents,
+          }}
+        />
       </div>
 
-      <DataTable
-        data={paginated as unknown as Record<string, unknown>[]}
-        columns={columns as unknown as TableColumn<Record<string, unknown>>[]}
-        total={total}
-        page={page}
-        pageSize={limit}
-        onPageChange={setPage}
-        sort={sort}
-        onSort={handleSort as (key: string) => void}
-        isLoading={isLoading}
-        emptyMessage='No classes found. Click "+ Add New Class" to get started.'
-        headerSlot={
-          <FilterBar
-            fields={CLASS_FILTER_FIELDS}
-            values={filters as Record<string, string>}
-            onFilter={(key, value) => handleFilter(key as keyof ClassRow, value)}
-            onSearch={handleSearch}
-            searchValue={query}
-            onReset={resetFilters}
-            hasActiveFilters={!!query || Object.values(filters).some(Boolean)}
-          />
-        }
-      />
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/40 overflow-hidden">
+        <DataTable
+          data={paginated as unknown as Record<string, unknown>[]}
+          columns={columns as unknown as TableColumn<Record<string, unknown>>[]}
+          total={total}
+          page={page}
+          pageSize={limit}
+          onPageChange={setPage}
+          sort={sort}
+          onSort={handleSort as (key: string) => void}
+          isLoading={isLoading}
+          emptyMessage='No classes found. Click "+ Add New Class" to get started.'
+          headerSlot={
+            <FilterBar
+              fields={CLASS_FILTER_FIELDS}
+              values={filters as Record<string, string>}
+              onFilter={(key, value) =>
+                handleFilter(key as keyof ClassRow, value)
+              }
+              onSearch={handleSearch}
+              searchValue={query}
+              onReset={resetFilters}
+              hasActiveFilters={!!query || Object.values(filters).some(Boolean)}
+            />
+          }
+        />
+      </div>
 
       <AddClassDrawer
         open={addOpen}

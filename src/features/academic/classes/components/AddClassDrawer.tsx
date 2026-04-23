@@ -59,43 +59,65 @@ export default function AddClassDrawer({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={handleClose} />
+      <div
+        className="fixed inset-0 z-40 bg-[#022448]/20 backdrop-blur-sm"
+        onClick={handleClose}
+      />
 
-      <div className="fixed top-0 right-0 h-full w-112.5 bg-white shadow-2xl z-50 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-slate-800">
-            Add New Class
-          </h2>
+      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-[0_12px_32px_rgba(2,36,72,0.08)] ring-1 ring-slate-200/40 p-6 flex flex-col">
+        <div className="flex items-center justify-between pb-5 border-b border-slate-100">
+          <div>
+            <h2 className="text-[22px] font-medium tracking-tight text-slate-900">
+              Add New Class
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Create a new academic class structure.
+            </p>
+          </div>
 
           <button
             onClick={handleClose}
-            className="w-9 h-9 rounded-full hover:bg-slate-100 text-xl"
+            className="h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 transition-colors"
           >
             ✕
           </button>
         </div>
 
-        <input
-          className="border border-slate-300 rounded-lg p-3 w-full mb-4"
-          placeholder="Enter class name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <div className="flex-1 py-6 space-y-5">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
+              Class Name
+            </label>
 
-        <select
-          className="border border-slate-300 rounded-lg p-3 w-full mb-6"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="primary">Primary</option>
-          <option value="secondary">Secondary</option>
-          <option value="higher_secondary">Higher Secondary</option>
-        </select>
+            <input
+              className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/40 focus:ring-[#1E3A5F]/30"
+              placeholder="Enter class name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
 
-        <div className="flex gap-3">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
+              Category
+            </label>
+
+            <select
+              className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/40 focus:ring-[#1E3A5F]/30"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="primary">Primary</option>
+              <option value="secondary">Secondary</option>
+              <option value="higher_secondary">Higher Secondary</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="pt-5 border-t border-slate-100 flex gap-3">
           <button
             onClick={handleClose}
-            className="flex-1 h-11 rounded-lg border border-slate-300"
+            className="flex-1 h-11 rounded-xl bg-white text-sm font-medium text-slate-700 ring-1 ring-slate-200/40 hover:bg-slate-50 transition-all"
           >
             Cancel
           </button>
@@ -103,9 +125,9 @@ export default function AddClassDrawer({
           <button
             onClick={handleSubmit}
             disabled={loading || !name.trim()}
-            className="flex-1 h-11 rounded-lg bg-[#1E3A5F] text-white disabled:opacity-60"
+            className="flex-1 h-11 rounded-xl bg-gradient-to-br from-[#022448] to-[#1E3A5F] text-sm font-medium text-white shadow-sm hover:shadow-md transition-all disabled:opacity-60"
           >
-            {loading ? "Saving..." : "Save"}
+            {loading ? "Saving..." : "Save Class"}
           </button>
         </div>
       </div>
