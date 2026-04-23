@@ -1,5 +1,8 @@
-import api from "@/lib/axios/index";
+"use client";
+
+import { CalendarDays, ChevronDown, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { classesHook } from "../hooks/useClasses";
 import { EditClassModalProps } from "../types";
 
 export default function EditClassModal({
@@ -8,17 +11,24 @@ export default function EditClassModal({
   onClose,
   onSuccess,
 }: EditClassModalProps) {
+  const { mutateAsync: updateClass } = classesHook.useUpdate();
+
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [academicYear, setAcademicYear] = useState("2023 - 2024");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (data) {
       setName(data.name || "");
+      setCategory(data.category || "");
     }
   }, [data]);
 
   const resetForm = () => {
     setName("");
+    setCategory("");
+    setAcademicYear("2023 - 2024");
   };
 
   const handleClose = () => {
@@ -26,7 +36,13 @@ export default function EditClassModal({
     onClose?.();
   };
 
-  const updateClass = async () => {
+  const getNumericLevel = () => {
+    if (category === "primary") return 1;
+    if (category === "secondary") return 6;
+    return 11;
+  };
+
+  const handleSubmit = async () => {
     const finalName = name.trim();
 
     if (!finalName) {
@@ -37,13 +53,17 @@ export default function EditClassModal({
     try {
       setLoading(true);
 
-      await api.patch(`/api/v1/classes/${data?.id}`, {
-        name: finalName,
+      await updateClass({
+        id: data?.id || "",
+        data: {
+          name: finalName,
+          numericLevel: getNumericLevel(),
+          description: category,
+        },
       });
 
-      resetForm();
       onSuccess?.();
-      onClose?.();
+      handleClose();
     } catch (error: any) {
       console.error(error);
       alert(error?.response?.data?.message || "Unable to update class");
@@ -56,42 +76,104 @@ export default function EditClassModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={handleClose} />
+      <div
+        onClick={handleClose}
+        className="fixed inset-0 z-40 bg-[#455F87]/30 backdrop-blur-md"
+      />
 
-      <div className="fixed inset-0 z-50 flex justify-center items-center px-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-slate-800">Edit Class</h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-135 overflow-hidden rounded-2xl bg-white shadow-[0_12px_32px_rgba(2,36,72,0.08)]">
+          <div className="relative bg-linear-to-br from-[#022448] to-[#1E3A5F] px-6 py-5 text-white">
+            <h2 className="text-[28px] font-medium leading-none tracking-tight">
+              Edit Class
+            </h2>
+
+            <p className="mt-1 text-[13px] text-white/70">
+              Modify essential class metadata.
+            </p>
 
             <button
               onClick={handleClose}
-              className="w-9 h-9 rounded-full hover:bg-slate-100 text-xl"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 transition"
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
 
-          <input
-            className="border border-slate-300 rounded-lg p-3 w-full mb-6"
-            placeholder="Enter class name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <div className="space-y-4 px-6 py-5 bg-white">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Class Name
+              </label>
 
-          <div className="flex gap-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter class name"
+                className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/70 focus:ring-[#1E3A5F]/30"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Category
+                </label>
+
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="h-11 w-full appearance-none rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/70 focus:ring-[#1E3A5F]/30"
+                  >
+                    <option value="">Select category</option>
+                    <option value="primary">Primary School</option>
+                    <option value="secondary">Secondary School</option>
+                    <option value="higher_secondary">Higher Secondary</option>
+                  </select>
+
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Academic Year
+                </label>
+
+                <div className="relative">
+                  <input
+                    value={academicYear}
+                    onChange={(e) => setAcademicYear(e.target.value)}
+                    className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/70 focus:ring-[#1E3A5F]/30"
+                  />
+
+                  <CalendarDays
+                    size={16}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 bg-[#F7F9FB] px-6 py-4">
             <button
               onClick={handleClose}
-              className="flex-1 h-11 rounded-lg border border-slate-300"
+              className="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
             >
               Cancel
             </button>
 
             <button
-              onClick={updateClass}
-              disabled={loading || !name.trim()}
-              className="flex-1 h-11 rounded-lg bg-[#1E3A5F] text-white disabled:opacity-60"
+              onClick={handleSubmit}
+              disabled={!name.trim() || loading}
+              className="h-10 min-w-[150px] rounded-xl bg-gradient-to-br from-[#022448] to-[#1E3A5F] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(2,36,72,0.14)] hover:opacity-95 transition disabled:opacity-50"
             >
-              {loading ? "Updating..." : "Update"}
+              {loading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>

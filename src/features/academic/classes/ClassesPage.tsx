@@ -2,7 +2,6 @@
 
 import {
   AvatarCircle,
-  ConfirmDialog,
   DataTable,
   FilterBar,
   MetricCard,
@@ -13,6 +12,7 @@ import { useDataTable } from "@/hooks/useDataTable";
 import { FilterField, TableColumn } from "@/types";
 import { useMemo, useState } from "react";
 
+import { PremiumConfirmDialog } from "@/common/components/shared/PremiumConfirmDialog";
 import AddClassDrawer from "./components/AddClassDrawer";
 import { ClassActionsMenu } from "./components/ClassActionsMenu";
 import EditClassModal from "./components/EditClassModal";
@@ -284,7 +284,7 @@ export function ClassesPage() {
         onSuccess={() => refetch?.()}
       />
 
-      <ConfirmDialog
+      <PremiumConfirmDialog
         isOpen={isOpen}
         options={options}
         onConfirm={handleConfirm}

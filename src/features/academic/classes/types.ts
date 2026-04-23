@@ -14,26 +14,42 @@ export interface Section {
 export interface ClassRow {
   id: string;
   name: string;
-  category: "primary" | "secondary" | "higher_secondary";
+
+  // backend fields
+  numericLevel: number;
+  description: "primary" | "secondary" | "higher_secondary";
+
+  // frontend ke liye
+  category?: "primary" | "secondary" | "higher_secondary";
   totalStudents: number;
+
   sections: Section[];
   teachers: Teacher[];
+
   academicYear?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateClassPayload {
   name: string;
-  category: string;
-  sections: Array<{ name: string; teacherId?: string }>;
+  numericLevel: number;
+  description: "primary" | "secondary" | "higher_secondary";
 }
 
-// addin new
+export interface UpdateClassPayload {
+  name?: string;
+  numericLevel?: number;
+  description?: "primary" | "secondary" | "higher_secondary";
+}
 
 export interface AddClassDrawerProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
+
 export interface EditClassModalProps {
   open: boolean;
   data: ClassRow | null;
