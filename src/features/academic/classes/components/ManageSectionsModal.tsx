@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios/index";
 import { useState } from "react";
 import { ManageSectionsModalProps } from "../types";
 
@@ -11,6 +11,8 @@ export default function ManageSectionsModal({
   const [sectionName, setSectionName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const CURRENT_ACADEMIC_YEAR_ID = "666f3b24-d9b9-4e08-9874-9f77b91d2ebf";
+
   const resetForm = () => {
     setSectionName("");
   };
@@ -21,25 +23,29 @@ export default function ManageSectionsModal({
   };
 
   const addSection = async () => {
+    const finalName = sectionName.trim();
+
+    if (!finalName) {
+      alert("Section name is required");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/sections`,
-        {
-          name: sectionName,
-          classId: classData?.id,
-          academicYearId: "YOUR_ACADEMIC_YEAR_ID",
-          capacity: 40,
-        },
-      );
+      await api.post("/api/v1/sections", {
+        name: finalName,
+        classId: classData?.id,
+        academicYearId: CURRENT_ACADEMIC_YEAR_ID,
+        capacity: 40,
+      });
 
       resetForm();
       onSuccess?.();
       onClose?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Unable to create section");
+      alert(error?.response?.data?.message || "Unable to create section");
     } finally {
       setLoading(false);
     }
@@ -53,7 +59,6 @@ export default function ManageSectionsModal({
 
       <div className="fixed inset-0 z-50 flex justify-center items-center px-4">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-slate-800">
               Manage Sections - {classData.name}

@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios/index";
 import { useEffect, useState } from "react";
 import { EditClassModalProps } from "../types";
 
@@ -13,7 +13,7 @@ export default function EditClassModal({
 
   useEffect(() => {
     if (data) {
-      setName(data.name);
+      setName(data.name || "");
     }
   }, [data]);
 
@@ -27,21 +27,26 @@ export default function EditClassModal({
   };
 
   const updateClass = async () => {
+    const finalName = name.trim();
+
+    if (!finalName) {
+      alert("Class name is required");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/classes/${data?.id}`,
-        {
-          name,
-        },
-      );
+      await api.patch(`/api/v1/classes/${data?.id}`, {
+        name: finalName,
+      });
 
       resetForm();
       onSuccess?.();
       onClose?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert(error?.response?.data?.message || "Unable to update class");
     } finally {
       setLoading(false);
     }

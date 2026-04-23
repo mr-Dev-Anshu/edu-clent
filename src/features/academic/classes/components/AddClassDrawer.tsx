@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios/index";
 import { useState } from "react";
 import { AddClassDrawerProps } from "../types";
 
@@ -22,32 +22,37 @@ export default function AddClassDrawer({
     setCategory("primary");
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose?.();
+  };
+
   const handleSubmit = async () => {
+    const finalName = name.trim();
+
+    if (!finalName) {
+      alert("Class name is required");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/classes`,
-        {
-          name,
-          numericLevel: getNumericLevel(),
-          description: category,
-        },
-      );
+      await api.post("/api/v1/classes", {
+        name: finalName,
+        numericLevel: getNumericLevel(),
+        description: category,
+      });
 
       resetForm();
       onSuccess?.();
       onClose?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert(error?.response?.data?.message || "Unable to create class");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose?.();
   };
 
   if (!open) return null;
