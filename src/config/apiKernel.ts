@@ -1,13 +1,12 @@
 import api from "@/lib/axios";
 
 interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    lastPage: number;
-    pageSize: number;
-  };
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  data: T[]; // Actual array yahan hai
 }
 
 export const apiKernel = <T, CreateDto = Partial<T>, UpdateDto = Partial<T>>(
@@ -15,10 +14,10 @@ export const apiKernel = <T, CreateDto = Partial<T>, UpdateDto = Partial<T>>(
 ) => ({
   fetch: () => api.get<{ data: T[] }>(path).then(r => r.data?.data || []),
 
-  fetchPage: (page: number = 1, limit: number = 10, search?: string) => 
+  fetchPage: (page: number = 1, limit: number = 10, filter?: object) => 
     api.get<PaginatedResponse<T>>(path, {
-      params: { page, limit, search }
-    }).then(r => r.data),
+      params: { page, limit, ...filter }
+    }).then(r => r.data), 
 
   getById: (id: string | number) => 
     api.get<{ data: T }>(`${path}/${id}`).then(r => r.data?.data),

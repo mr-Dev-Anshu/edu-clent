@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import ReduxProvider from "@/providers/ReduxProviders";
+import { Toaster } from "sonner";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -32,6 +33,12 @@ export default function RootLayout({
         <ReduxProvider>
           <ReactQueryProvider>
           {children}
+          <Toaster
+          position="top-center" 
+          richColors 
+          closeButton 
+          expand={false}
+        />
         </ReactQueryProvider>
         </ReduxProvider>
       </body>

@@ -11,9 +11,11 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "@/features/auth/slice/index";
+import headerReducer from "@/common/components/slice/DashBoardHeaderSlice"
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  header: headerReducer,
 });
 
 const persistConfig = {

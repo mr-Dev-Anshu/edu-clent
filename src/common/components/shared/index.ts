@@ -11,3 +11,4 @@ export { AvatarCircle }   from "./AvatarCircle";
 export { EmptyState }     from "./EmptyState";
 export { FilterBar }      from "./FilterBar";
 export { ConfirmDialog }  from "./ConfirmDialog";
+export {Modal} from './Modal'
