@@ -1,18 +1,30 @@
 "use client";
 
-import api from "@/lib/axios/index";
+import { academicYearsHook } from "@/features/academic/classes/hooks/useAcademicYears";
 import { ChevronDown, PlusCircle, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { classesHook } from "../hooks/useClasses";
-import { AddClassDrawerProps } from "../types";
+import { sectionsHook } from "../hooks/useSections";
+import { AddClassDrawerProps, ClassCategory } from "../types";
 
 interface SectionItem {
-  id: number;
+  id: string;
   name: string;
   teacher: string;
 }
 
-const CURRENT_ACADEMIC_YEAR_ID = "666f3b24-d9b9-4e08-9874-9f77b91d2ebf";
+const DEFAULT_SECTIONS: SectionItem[] = [
+  {
+    id: crypto.randomUUID(),
+    name: "Section A",
+    teacher: "",
+  },
+  {
+    id: crypto.randomUUID(),
+    name: "Section B",
+    teacher: "",
+  },
+];
 
 export default function AddClassDrawer({
   open,
@@ -20,15 +32,21 @@ export default function AddClassDrawer({
   onSuccess,
 }: AddClassDrawerProps) {
   const { mutateAsync: createClass } = classesHook.useCreate();
+  const { mutateAsync: createSection } = sectionsHook.useCreate();
+
+  const { data: academicYears = [], isLoading: academicYearLoading } =
+    academicYearsHook.useData();
+
+  const currentAcademicYear = useMemo(
+    () => academicYears.find((item) => item.isCurrent),
+    [academicYears],
+  );
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("primary");
+  const [category, setCategory] = useState<ClassCategory>("primary");
   const [loading, setLoading] = useState(false);
 
-  const [sections, setSections] = useState<SectionItem[]>([
-    { id: 1, name: "Section A", teacher: "" },
-    { id: 2, name: "Section B", teacher: "" },
-  ]);
+  const [sections, setSections] = useState<SectionItem[]>(DEFAULT_SECTIONS);
 
   const getNumericLevel = () => {
     if (category === "primary") return 1;
@@ -40,8 +58,16 @@ export default function AddClassDrawer({
     setName("");
     setCategory("primary");
     setSections([
-      { id: 1, name: "Section A", teacher: "" },
-      { id: 2, name: "Section B", teacher: "" },
+      {
+        id: crypto.randomUUID(),
+        name: "Section A",
+        teacher: "",
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Section B",
+        teacher: "",
+      },
     ]);
   };
 
@@ -52,21 +78,34 @@ export default function AddClassDrawer({
     setSections((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         name: `Section ${letter}`,
         teacher: "",
       },
     ]);
   };
 
-  const removeSection = (id: number) => {
+  const removeSection = (id: string) => {
     setSections((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const updateTeacher = (id: string, value: string) => {
+    setSections((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, teacher: value } : item)),
+    );
   };
 
   const handleClose = () => {
     if (loading) return;
+
     resetForm();
     onClose?.();
+  };
+
+  const validateSections = () => {
+    const names = sections.map((item) => item.name.trim().toLowerCase());
+
+    return new Set(names).size === names.length;
   };
 
   const handleSubmit = async () => {
@@ -76,9 +115,23 @@ export default function AddClassDrawer({
         return;
       }
 
+      if (academicYearLoading) {
+        alert("Academic year loading...");
+        return;
+      }
+
+      if (!currentAcademicYear?.id) {
+        alert("Current academic year not found");
+        return;
+      }
+
+      if (!validateSections()) {
+        alert("Duplicate section names are not allowed");
+        return;
+      }
+
       setLoading(true);
 
-      // create class through kernel hook
       const response: any = await createClass({
         name: name.trim(),
         numericLevel: getNumericLevel(),
@@ -91,22 +144,18 @@ export default function AddClassDrawer({
         throw new Error("Class ID not found");
       }
 
-      // create sections through api
       await Promise.all(
-        sections.map((item) => {
-          const payload: any = {
+        sections.map((item) =>
+          createSection({
             name: item.name,
             classId,
-            academicYearId: CURRENT_ACADEMIC_YEAR_ID,
+            academicYearId: currentAcademicYear.id,
             capacity: 40,
-          };
-
-          if (item.teacher && item.teacher.trim() !== "") {
-            payload.classTeacherId = item.teacher;
-          }
-
-          return api.post("/api/v1/sections", payload);
-        }),
+            ...(item.teacher && {
+              classTeacherId: item.teacher,
+            }),
+          }),
+        ),
       );
 
       resetForm();
@@ -114,6 +163,7 @@ export default function AddClassDrawer({
       onClose?.();
     } catch (error: any) {
       console.error(error);
+
       alert(error?.response?.data?.message || "Unable to create class");
     } finally {
       setLoading(false);
@@ -172,7 +222,9 @@ export default function AddClassDrawer({
                 <div className="relative">
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) =>
+                      setCategory(e.target.value as ClassCategory)
+                    }
                     className="appearance-none h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1E3A5F] bg-white"
                   >
                     <option value="primary">Primary School</option>
@@ -226,8 +278,12 @@ export default function AddClassDrawer({
                   </div>
 
                   <div className="relative">
-                    <select className="appearance-none h-10 w-full rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-[#1E3A5F]">
-                      <option>Assign Class Teacher</option>
+                    <select
+                      value={item.teacher}
+                      onChange={(e) => updateTeacher(item.id, e.target.value)}
+                      className="appearance-none h-10 w-full rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-[#1E3A5F]"
+                    >
+                      <option value="">Assign Class Teacher</option>
                     </select>
 
                     <ChevronDown

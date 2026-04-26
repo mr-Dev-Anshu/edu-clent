@@ -1,3 +1,5 @@
+export type ClassCategory = "primary" | "secondary" | "higher_secondary";
+
 export interface Teacher {
   id: string;
   name: string;
@@ -15,12 +17,12 @@ export interface ClassRow {
   id: string;
   name: string;
 
-  // backend fields
   numericLevel: number;
-  description: "primary" | "secondary" | "higher_secondary";
+  description: ClassCategory;
 
-  // frontend ke liye
-  category?: "primary" | "secondary" | "higher_secondary";
+  // optional frontend alias (legacy support)
+  category?: ClassCategory;
+
   totalStudents: number;
 
   sections: Section[];
@@ -35,13 +37,13 @@ export interface ClassRow {
 export interface CreateClassPayload {
   name: string;
   numericLevel: number;
-  description: "primary" | "secondary" | "higher_secondary";
+  description: ClassCategory;
 }
 
 export interface UpdateClassPayload {
   name?: string;
   numericLevel?: number;
-  description?: "primary" | "secondary" | "higher_secondary";
+  description?: ClassCategory;
 }
 
 export interface AddClassDrawerProps {

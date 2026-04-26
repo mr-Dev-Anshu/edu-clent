@@ -2,8 +2,9 @@
 
 import { CalendarDays, ChevronDown, X } from "lucide-react";
 import { useEffect, useState } from "react";
+
 import { classesHook } from "../hooks/useClasses";
-import { EditClassModalProps } from "../types";
+import { ClassCategory, EditClassModalProps } from "../types";
 
 export default function EditClassModal({
   open,
@@ -14,24 +15,24 @@ export default function EditClassModal({
   const { mutateAsync: updateClass } = classesHook.useUpdate();
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [academicYear, setAcademicYear] = useState("2023 - 2024");
+  const [category, setCategory] = useState<ClassCategory>("primary");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (data) {
-      setName(data.name || "");
-      setCategory(data.category || "");
-    }
+    if (!data) return;
+
+    setName(data.name || "");
+    setCategory(data.description || "primary");
   }, [data]);
 
   const resetForm = () => {
     setName("");
-    setCategory("");
-    setAcademicYear("2023 - 2024");
+    setCategory("primary");
   };
 
   const handleClose = () => {
+    if (loading) return;
+
     resetForm();
     onClose?.();
   };
@@ -50,11 +51,16 @@ export default function EditClassModal({
       return;
     }
 
+    if (!data?.id) {
+      alert("Class not found");
+      return;
+    }
+
     try {
       setLoading(true);
 
       await updateClass({
-        id: data?.id || "",
+        id: data.id,
         data: {
           name: finalName,
           numericLevel: getNumericLevel(),
@@ -65,7 +71,6 @@ export default function EditClassModal({
       onSuccess?.();
       handleClose();
     } catch (error: any) {
-      console.error(error);
       alert(error?.response?.data?.message || "Unable to update class");
     } finally {
       setLoading(false);
@@ -94,7 +99,8 @@ export default function EditClassModal({
 
             <button
               onClick={handleClose}
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 transition"
+              disabled={loading}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 transition disabled:opacity-50"
             >
               <X size={18} />
             </button>
@@ -123,10 +129,11 @@ export default function EditClassModal({
                 <div className="relative">
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) =>
+                      setCategory(e.target.value as ClassCategory)
+                    }
                     className="h-11 w-full appearance-none rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/70 focus:ring-[#1E3A5F]/30"
                   >
-                    <option value="">Select category</option>
                     <option value="primary">Primary School</option>
                     <option value="secondary">Secondary School</option>
                     <option value="higher_secondary">Higher Secondary</option>
@@ -146,9 +153,9 @@ export default function EditClassModal({
 
                 <div className="relative">
                   <input
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
-                    className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-800 outline-none ring-1 ring-slate-200/70 focus:ring-[#1E3A5F]/30"
+                    value={data.academicYear || "Current Academic Year"}
+                    disabled
+                    className="h-11 w-full rounded-xl bg-[#F7F9FB] px-4 text-sm text-slate-500 outline-none ring-1 ring-slate-200/70"
                   />
 
                   <CalendarDays
@@ -163,7 +170,8 @@ export default function EditClassModal({
           <div className="flex items-center justify-end gap-3 bg-[#F7F9FB] px-6 py-4">
             <button
               onClick={handleClose}
-              className="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+              disabled={loading}
+              className="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
             >
               Cancel
             </button>
@@ -171,7 +179,7 @@ export default function EditClassModal({
             <button
               onClick={handleSubmit}
               disabled={!name.trim() || loading}
-              className="h-10 min-w-[150px] rounded-xl bg-gradient-to-br from-[#022448] to-[#1E3A5F] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(2,36,72,0.14)] hover:opacity-95 transition disabled:opacity-50"
+              className="h-10 min-w-37.5 rounded-xl bg-linear-to-br from-[#022448] to-[#1E3A5F] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(2,36,72,0.14)] hover:opacity-95 transition disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>

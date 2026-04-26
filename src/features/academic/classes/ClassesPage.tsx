@@ -7,18 +7,20 @@ import {
   MetricCard,
   PageHeader,
 } from "@/common/components/shared";
+import { PremiumConfirmDialog } from "@/common/components/shared/PremiumConfirmDialog";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useDataTable } from "@/hooks/useDataTable";
 import { FilterField, TableColumn } from "@/types";
 import { useMemo, useState } from "react";
 
-import { PremiumConfirmDialog } from "@/common/components/shared/PremiumConfirmDialog";
 import AddClassDrawer from "./components/AddClassDrawer";
 import { ClassActionsMenu } from "./components/ClassActionsMenu";
 import EditClassModal from "./components/EditClassModal";
 import ManageSectionsModal from "./components/ManageSectionsModal";
+
 import { classesHook } from "./hooks/useClasses";
 import { useClassesWithSections } from "./hooks/useClassesWithSections";
+
 import { ClassRow } from "./types";
 
 const CATEGORY_FILTER_OPTIONS = [
@@ -53,11 +55,23 @@ export function ClassesPage() {
   const [sectionsOpen, setSectionsOpen] = useState(false);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const limit = 10;
 
   const { mutateAsync: deleteClass } = classesHook.useRemove();
 
-  const { data: classes = [], isLoading, refetch } = useClassesWithSections();
+  const { data: rawClasses = [], isLoading } = useClassesWithSections();
+
+  const classes = useMemo<ClassRow[]>(
+    () =>
+      rawClasses.map((item) => ({
+        ...item,
+        category: item.description,
+        sections: item.sections ?? [],
+        teachers: item.teachers ?? [],
+        totalStudents: item.totalStudents ?? 0,
+      })),
+    [rawClasses],
+  );
 
   const total = classes.length;
 
@@ -81,42 +95,40 @@ export function ClassesPage() {
 
   const totalClasses = total;
 
-  const totalSections = useMemo(
-    () => classes.reduce((sum, c) => sum + (c.sections?.length ?? 0), 0),
-    [classes],
-  );
+  const totalSections = useMemo(() => {
+    return classes.reduce((sum, item) => sum + (item.sections?.length ?? 0), 0);
+  }, [classes]);
 
   const avgStudents = useMemo(() => {
     if (totalSections === 0) return 0;
 
-    const allStudents = classes.reduce(
-      (sum, c) => sum + (c.totalStudents ?? 0),
+    const totalStudents = classes.reduce(
+      (sum, item) => sum + (item.totalStudents ?? 0),
       0,
     );
 
-    return Math.round(allStudents / totalSections);
+    return Math.round(totalStudents / totalSections);
   }, [classes, totalSections]);
 
-  const handleEdit = (classData: ClassRow) => {
-    setSelected(classData);
+  const handleEdit = (row: ClassRow) => {
+    setSelected(row);
     setEditOpen(true);
   };
 
-  const handleManage = (classData: ClassRow) => {
-    setSelected(classData);
+  const handleManage = (row: ClassRow) => {
+    setSelected(row);
     setSectionsOpen(true);
   };
 
-  const handleDelete = (classData: ClassRow) => {
+  const handleDelete = (row: ClassRow) => {
     confirm({
-      title: `Delete "${classData.name}"?`,
+      title: `Delete "${row.name}"?`,
       description:
         "This will permanently delete the class and all its sections.",
       confirmLabel: "Yes, Delete",
       variant: "danger",
       onConfirm: async () => {
-        await deleteClass(classData.id);
-        refetch?.();
+        await deleteClass(row.id);
       },
     });
   };
@@ -131,8 +143,9 @@ export function ClassesPage() {
           <p className="font-medium text-[14px] tracking-tight text-slate-800">
             {row.name}
           </p>
+
           <p className="text-xs text-slate-400 capitalize mt-0.5">
-            {row.category?.replace(/_/g, " ")}
+            {row.description.replace(/_/g, " ")}
           </p>
         </div>
       ),
@@ -143,18 +156,18 @@ export function ClassesPage() {
       width: "220px",
       render: (_, row) => (
         <div className="flex flex-wrap gap-1.5">
-          {(row.sections ?? []).slice(0, 3).map((s) => (
+          {row.sections.slice(0, 3).map((section) => (
             <span
-              key={s.id}
+              key={section.id}
               className="px-2.5 py-1 text-xs rounded-full bg-[#EEF4FF] text-[#1E3A5F] font-medium"
             >
-              {s.name}
+              {section.name}
             </span>
           ))}
 
-          {(row.sections ?? []).length > 3 && (
+          {row.sections.length > 3 && (
             <span className="text-xs text-slate-400 self-center">
-              +{(row.sections ?? []).length - 3}
+              +{row.sections.length - 3}
             </span>
           )}
         </div>
@@ -166,11 +179,11 @@ export function ClassesPage() {
       width: "160px",
       render: (_, row) => (
         <div className="flex -space-x-2">
-          {(row.teachers ?? []).slice(0, 3).map((t) => (
+          {row.teachers.slice(0, 3).map((teacher) => (
             <AvatarCircle
-              key={t.id}
-              name={t.name}
-              imageUrl={t.avatarUrl}
+              key={teacher.id}
+              name={teacher.name}
+              imageUrl={teacher.avatarUrl}
               size="sm"
             />
           ))}
@@ -227,7 +240,9 @@ export function ClassesPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <MetricCard data={{ label: "TOTAL CLASSES", value: totalClasses }} />
+
         <MetricCard data={{ label: "TOTAL SECTIONS", value: totalSections }} />
+
         <MetricCard
           data={{
             label: "AVG STUDENTS/SECTION",
@@ -267,21 +282,21 @@ export function ClassesPage() {
       <AddClassDrawer
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onSuccess={() => refetch?.()}
+        onSuccess={() => setAddOpen(false)}
       />
 
       <EditClassModal
         open={editOpen}
         data={selected}
         onClose={() => setEditOpen(false)}
-        onSuccess={() => refetch?.()}
+        onSuccess={() => setEditOpen(false)}
       />
 
       <ManageSectionsModal
         open={sectionsOpen}
         classData={selected}
         onClose={() => setSectionsOpen(false)}
-        onSuccess={() => refetch?.()}
+        onSuccess={() => setSectionsOpen(false)}
       />
 
       <PremiumConfirmDialog
