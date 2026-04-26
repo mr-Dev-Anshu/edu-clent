@@ -54,8 +54,8 @@ export function ClassesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
 
-  const [page, setPage] = useState(1);
-  const limit = 10;
+  // const [page, setPage] = useState(1);
+  // const limit = 10;
 
   const { mutateAsync: deleteClass } = classesHook.useRemove();
 
@@ -73,27 +73,47 @@ export function ClassesPage() {
     [rawClasses],
   );
 
-  const total = classes.length;
+  // const total = classes.length;
+
+  // const {
+  //   paginated,
+  //   query,
+  //   filters,
+  //   sort,
+  //   handleSearch,
+  //   handleFilter,
+  //   handleSort,
+  //   resetFilters,
+  // } = useDataTable<ClassRow>({
+  //   data: classes,
+  //   pageSize: limit,
+  //   searchKeys: ["name"],
+  // });
 
   const {
-    paginated,
-    query,
-    filters,
-    sort,
-    handleSearch,
-    handleFilter,
-    handleSort,
-    resetFilters,
-  } = useDataTable<ClassRow>({
-    data: classes,
-    pageSize: limit,
-    searchKeys: ["name"],
-  });
+  paginated,
+  total,
+  page,
+  pageSize,
+  setPage,
+  query,
+  filters,
+  sort,
+  handleSearch,
+  handleFilter,
+  handleSort,
+  resetFilters,
+} = useDataTable<ClassRow>({
+  data: classes,
+  pageSize: 10,
+  searchKeys: ["name"],
+});
 
   const { confirm, isOpen, options, handleConfirm, handleCancel } =
     useConfirm();
 
-  const totalClasses = total;
+  // const totalClasses = total;
+  const totalClasses = classes.length;
 
   const totalSections = useMemo(() => {
     return classes.reduce((sum, item) => sum + (item.sections?.length ?? 0), 0);
@@ -213,7 +233,7 @@ export function ClassesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB] p-6 space-y-6">
+    <div className="min-h-screen bg-[#F7F9FB] p-6 space-y-5 pt-0">
       <PageHeader
         title="Classes & Sections"
         description="Manage academic structures and student distribution."
@@ -257,7 +277,8 @@ export function ClassesPage() {
           columns={columns as unknown as TableColumn<Record<string, unknown>>[]}
           total={total}
           page={page}
-          pageSize={limit}
+          // pageSize={limit}
+          pageSize={pageSize}
           onPageChange={setPage}
           sort={sort}
           onSort={handleSort as (key: string) => void}
