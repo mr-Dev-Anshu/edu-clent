@@ -1,9 +1,9 @@
 // src/components/shared/ConfirmDialog.tsx
 "use client";
 
-import { AlertTriangle, Info, X } from "lucide-react";
-import { ConfirmOptions } from "@/types";
 import { cn } from "@/lib/utils";
+import { ConfirmOptions } from "@/types";
+import { AlertTriangle, Info, X } from "lucide-react";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
   if (!isOpen || !options) return null;
 
-  const isDanger  = options.variant === "danger";
+  const isDanger = options.variant === "danger";
   const isWarning = options.variant === "warning";
 
   return (
@@ -34,10 +34,10 @@ export const ConfirmDialog = ({
         <div className="flex items-start gap-4">
           <div
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-              isDanger  && "bg-red-100",
+              "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+              isDanger && "bg-red-100",
               isWarning && "bg-amber-100",
-              !isDanger && !isWarning && "bg-blue-100"
+              !isDanger && !isWarning && "bg-blue-100",
             )}
           >
             {isDanger || isWarning ? (
@@ -64,7 +64,7 @@ export const ConfirmDialog = ({
 
           <button
             onClick={onCancel}
-            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <X size={14} />
           </button>
@@ -84,8 +84,8 @@ export const ConfirmDialog = ({
               isDanger
                 ? "bg-red-600 hover:bg-red-700"
                 : isWarning
-                ? "bg-amber-600 hover:bg-amber-700"
-                : "bg-[#1E3A5F] hover:bg-[#152d4a]"
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-[#1E3A5F] hover:bg-[#152d4a]",
             )}
           >
             {options.confirmLabel ?? "Confirm"}

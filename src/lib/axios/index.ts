@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 import { ApiError } from "@/types/api.types";
+import { store } from "@/store";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 
 // Axios instance
 const api = axios.create({
@@ -13,11 +13,16 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// REQUEST INTERCEPTOR
+// REQUEST INTERCEPTOR — token + x-tenant-id har request mein jaayega
 api.interceptors.request.use(
   (config) => {
-    // future: attach token here
-    // config.headers.Authorization = `Bearer token`;
+    const state    = store.getState() as { auth: { token: string | null; tenant: { id: string } | null } };
+    const token    = state.auth?.token;
+    const tenantId = state.auth?.tenant?.id;
+
+    if (token)    config.headers.Authorization  = `Bearer ${token}`;
+    if (tenantId) config.headers["x-tenant-id"] = tenantId;
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -25,9 +30,7 @@ api.interceptors.request.use(
 
 // RESPONSE INTERCEPTOR
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error: AxiosError<ApiError>) => {
     const message =
       error.response?.data?.message ||
@@ -36,7 +39,6 @@ api.interceptors.response.use(
       "Something went wrong";
 
     console.error("API Error:", message);
-
     return Promise.reject(error);
   }
 );
