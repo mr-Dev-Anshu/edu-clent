@@ -29,10 +29,16 @@ export default function ManageSectionsModal({
     return current?.id || "";
   }, [academicYears]);
 
-  const sections = useMemo(() => classData?.sections || [], [classData]);
+  const sections = useMemo(() => {
+    return [...(classData?.sections || [])].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [classData]);
+
+  const isBusy = creating || !!loadingId;
 
   const handleClose = () => {
-    if (creating || loadingId) return;
+    if (isBusy) return;
     onClose?.();
   };
 
@@ -40,6 +46,24 @@ export default function ManageSectionsModal({
     await queryClient.invalidateQueries({
       queryKey: ["classes"],
     });
+  };
+
+  const getNextSectionName = () => {
+    const usedLetters = new Set(
+      sections.map((item) =>
+        item.name.replace("Section ", "").trim().toUpperCase(),
+      ),
+    );
+
+    for (let i = 65; i <= 90; i++) {
+      const letter = String.fromCharCode(i);
+
+      if (!usedLetters.has(letter)) {
+        return `Section ${letter}`;
+      }
+    }
+
+    return `Section ${sections.length + 1}`;
   };
 
   const handleDelete = async (id: string) => {
@@ -50,7 +74,6 @@ export default function ManageSectionsModal({
       await refreshClasses();
 
       onSuccess?.();
-      onClose?.();
     } catch (error: any) {
       alert(error?.response?.data?.message || "Unable to delete section");
     } finally {
@@ -69,11 +92,8 @@ export default function ManageSectionsModal({
     try {
       setCreating(true);
 
-      const next = sections.length + 1;
-      const letter = String.fromCharCode(64 + next);
-
       await createSection({
-        name: `Section ${letter}`,
+        name: getNextSectionName(),
         classId: classData.id,
         academicYearId: currentAcademicYearId,
         capacity: 40,
@@ -82,7 +102,6 @@ export default function ManageSectionsModal({
       await refreshClasses();
 
       onSuccess?.();
-      onClose?.();
     } catch (error: any) {
       alert(error?.response?.data?.message || "Unable to create section");
     } finally {
@@ -101,7 +120,7 @@ export default function ManageSectionsModal({
 
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div className="w-full max-w-155 overflow-hidden rounded-2xl bg-white shadow-[0_12px_32px_rgba(2,36,72,0.08)]">
-          <div className="relative px-6 py-5 bg-white">
+          <div className="relative bg-white px-6 py-5">
             <h2 className="text-[28px] font-medium tracking-tight text-[#191C1E]">
               Manage Sections
             </h2>
@@ -110,21 +129,21 @@ export default function ManageSectionsModal({
 
             <button
               onClick={handleClose}
-              disabled={creating || !!loadingId}
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-100 transition disabled:opacity-50"
+              disabled={isBusy}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg transition hover:bg-slate-100 disabled:opacity-50"
             >
               <X size={18} className="text-slate-700" />
             </button>
           </div>
 
           <div className="px-6">
-            <div className="grid grid-cols-[1.1fr_1.4fr_70px] bg-[#ECEEF0] rounded-xl px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+            <div className="grid grid-cols-[1.1fr_1.4fr_70px] rounded-xl bg-[#ECEEF0] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
               <div>Section</div>
               <div>Teacher</div>
               <div className="text-right">Action</div>
             </div>
 
-            <div className="mt-1 space-y-px bg-[#ECEEF0] rounded-xl overflow-hidden">
+            <div className="mt-1 space-y-px overflow-hidden rounded-xl bg-[#ECEEF0]">
               {sections.length === 0 && (
                 <div className="bg-white py-8 text-center text-sm text-slate-500">
                   No sections found.
@@ -145,7 +164,7 @@ export default function ManageSectionsModal({
                       {item.teacher?.name?.charAt(0) || "T"}
                     </div>
 
-                    <span className="text-sm text-slate-700 truncate">
+                    <span className="truncate text-sm text-slate-700">
                       {item.teacher?.name || "Unassigned"}
                     </span>
                   </div>
@@ -170,7 +189,7 @@ export default function ManageSectionsModal({
           <div className="mt-4 flex items-center justify-between bg-[#F7F9FB] px-6 py-4">
             <button
               onClick={handleClose}
-              disabled={creating || !!loadingId}
+              disabled={isBusy}
               className="text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
             >
               Cancel
@@ -178,7 +197,7 @@ export default function ManageSectionsModal({
 
             <button
               onClick={handleAddSection}
-              disabled={creating || !!loadingId}
+              disabled={isBusy}
               className="flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[#022448] to-[#1E3A5F] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(2,36,72,0.14)] disabled:opacity-50"
             >
               <Plus size={15} />

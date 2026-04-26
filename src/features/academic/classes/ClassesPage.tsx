@@ -145,7 +145,7 @@ export function ClassesPage() {
           </p>
 
           <p className="text-xs text-slate-400 capitalize mt-0.5">
-            {row.description.replace(/_/g, " ")}
+            {(row.description || "primary").replace(/_/g, " ")}
           </p>
         </div>
       ),
