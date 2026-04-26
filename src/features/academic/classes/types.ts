@@ -14,6 +14,7 @@ export interface Section {
 }
 
 export interface ClassRow {
+  [key: string]: unknown;
   id: string;
   name: string;
 
