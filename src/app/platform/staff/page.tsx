@@ -1,4 +1,4 @@
-import StaffPage from "@/features/platform";
+import StaffPage from "@/features/platform/staff";
 import React from "react";
 
 const Staff = () => {
