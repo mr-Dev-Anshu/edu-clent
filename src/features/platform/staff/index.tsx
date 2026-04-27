@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { useHeader } from "@/hooks/useHeader";
 import { DataTable, FilterBar, Modal } from "@/common/components/shared"; 
-import { useStaff } from "./staff/services/StaffService";
-import { columns, dashStats, headerConfig, staffFilterConfigs } from "./staff/constant/CONFIG_DATA";
-import {StaffEnrollment} from "./staff/components/StaffInrollments";
+import { useStaff } from "./services/StaffService";
+import { columns, dashStats, headerConfig, staffFilterConfigs } from "./constant/CONFIG_DATA";
+import {StaffEnrollment} from "./components/StaffInrollments";
 
 const StaffPage = () => {
   const [page, setPage] = useState(1);
