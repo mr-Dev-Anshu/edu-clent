@@ -1,13 +1,12 @@
-"use client";
-import React from 'react';
+import StaffPage from "@/features/platform/staff";
+import React from "react";
 
-const StaffPage = () => {
+const Staff = () => {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Staff Module</h1>
-      <p className="text-slate-500">Welcome to the Staff management section.</p>
+    <div>
+      <StaffPage />
     </div>
   );
 };
 
-export default StaffPage;
+export default Staff;

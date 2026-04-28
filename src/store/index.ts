@@ -13,6 +13,7 @@ import {
 import createWebStorage from 'redux-persist/lib/storage/createWebStorage'
 
 import authReducer from "@/features/auth/slice/index";
+import headerReducer from "@/common/components/slice/DashBoardHeaderSlice"
 
 const createNoopStorage = () => ({
   getItem() { return Promise.resolve(null) },
@@ -26,6 +27,7 @@ const storage = typeof window !== 'undefined'
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  header: headerReducer,
 });
 
 const persistConfig = {

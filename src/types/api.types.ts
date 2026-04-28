@@ -5,6 +5,8 @@ export interface ApiResponse<T> {
 }
 
 export interface ApiError {
-  message?: string;
-  error?: string;
+  success: boolean;
+  message: string;
+  stack?: string; // Development environment mein aata hai
+  error?: string; // Fallback
 }

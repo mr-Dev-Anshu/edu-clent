@@ -11,4 +11,8 @@ export { AvatarCircle }   from "./AvatarCircle";
 export { EmptyState }     from "./EmptyState";
 export { FilterBar }      from "./FilterBar";
 export { ConfirmDialog }  from "./ConfirmDialog";
+<<<<<<< HEAD
 export { SideDrawer } from './SideDrawer';
+=======
+export {Modal} from './Modal'
+>>>>>>> 9be43ca85a0b2ce1d0b4219a8009b8f081fa6b34

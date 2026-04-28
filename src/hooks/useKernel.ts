@@ -8,14 +8,13 @@ export const kernelHook = <T, CreateDto, UpdateDto>(
   useData: () => 
     useQuery({ queryKey: [key, 'all'], queryFn: kernel.fetch, retry: 1 }),
 
-  usePaginatedData: (page: number = 1, limit: number = 10, search?: string) =>
-    useQuery({
-      queryKey: [key, 'list', { page, limit, search }],
-      queryFn: () => kernel.fetchPage(page, limit, search),
-      placeholderData: keepPreviousData, 
-      retry: 1,
-    }),
-
+ usePaginatedData: (page: number = 1, limit: number = 10, filters?: any) => 
+  useQuery({
+    queryKey: [key, 'list', { page, limit, ...filters }], 
+    queryFn: () => kernel.fetchPage(page, limit, filters),
+    placeholderData: keepPreviousData,
+    retry: 1,
+  }),
   useSingleData: (id: string | number | null) =>
     useQuery({
       queryKey: [key, 'detail', id],

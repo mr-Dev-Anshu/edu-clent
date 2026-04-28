@@ -1,44 +1,63 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React from 'react';
+import React from "react";
+import { useAppSelector } from "@/hooks/useStore";
+import { selectAuthUser } from "@/features/auth/slice";
+import Sidebar from "@/common/components/main/Sidebar";
+import DashboardHeader from "@/common/components/shared/DashboardHeader";
+import { PLATFORM_SIDEBAR } from "@/config/sideBarConfig";
+import * as Icons from "lucide-react";
+import { usePathname } from "next/navigation";
 
-import { useAppSelector } from '@/hooks/useStore';
-import { selectAuthUser } from '@/features/auth/slice';
-import Sidebar from '@/common/components/main/Sidebar';
-import { PLATFORM_SIDEBAR } from '@/config/sideBarConfig';
-
-export default function PlatformLayout({ children }: { children: React.ReactNode }) {
+const PlatformLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
   const user = useAppSelector(selectAuthUser);
+  const { moduleName, items, actions } = useAppSelector(
+    (state) => state.header,
+  );
 
-  if (user?.roles[0]?.roleType !== 'platform') {
-     // Redirection logic can also be here if not using a global AuthGuard
-  }
+  const mappedNavItems = items.map((item) => {
+    const isMatch = pathname.startsWith(item.href);
+    const isMoreSpecificMatch = items.some(
+      (otherItem) =>
+        otherItem.href !== item.href &&
+        pathname.startsWith(otherItem.href) &&
+        otherItem.href.length > item.href.length,
+    );
+    const isActive = isMatch && !isMoreSpecificMatch;
+    return {
+      ...item,
+      isActive,
+    };
+  });
+  const mappedActions = actions.map((action) => ({
+    ...action,
+    icon: action.iconName ? (Icons as any)[action.iconName] : undefined,
+    onClick: () => {
+      const event = new CustomEvent("header-action-trigger", {
+        detail: { eventName: action.emitEvent },
+      });
+      window.dispatchEvent(event);
+    },
+  }));
+
+  if (!user) return null;
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar items={PLATFORM_SIDEBAR} />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
-          <div>
-            <h1 className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
-              School Management
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             <div className="text-right">
-                <p className="text-sm font-bold text-slate-900">{user?.firstName}</p>
-                <p className="text-[10px] text-slate-500">{user?.tenant?.name}</p>
-             </div>
-             <div className="w-10 h-10 rounded-full bg-[#022448] flex items-center justify-center text-white font-bold">
-                {user?.firstName[0]}
-             </div>
-          </div>
-        </header>
+        <DashboardHeader
+          moduleName={moduleName || "Dashboard"}
+          headerNavItems={mappedNavItems}
+          actions={mappedActions}
+          onSearchChange={(val) => console.log("Search:", val)}
+        />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-10">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
-}
+};
+
+export default PlatformLayout;

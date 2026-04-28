@@ -32,15 +32,24 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
-    const message =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Something went wrong";
+    // Backend se aane wala structured error message
+    const backendMessage = error.response?.data?.message; 
+    const fallbackMessage = error.message || "Something went wrong";
+    
+    // Custom error object taaki component mein 'error.message' direct mil sake
+    const finalError = {
+      ...error,
+      message: backendMessage || fallbackMessage,
+      stack: error.response?.data?.stack // Debugging ke liye stack bhi rakh sakte hain
+    };
 
+<<<<<<< HEAD
     console.error("API Error:", message);
     return Promise.reject(error);
+=======
+    return Promise.reject(finalError);
+>>>>>>> 9be43ca85a0b2ce1d0b4219a8009b8f081fa6b34
   }
 );
 
-export default api;
+export default api ; 
