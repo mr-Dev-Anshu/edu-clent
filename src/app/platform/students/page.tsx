@@ -1,11 +1,5 @@
-import React from 'react'
+import { StudentPage } from "@/features/platform/students";
 
-const page = () => {
-  return (
-    <div>
-       this is students 
-    </div>
-  )
+export default function Students() {
+  return <StudentPage />;
 }
-
-export default page
