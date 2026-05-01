@@ -1,11 +1,12 @@
-import React from 'react'
+import ClassesPage from "@/features/platform/class/index";
+import React from "react";
 
-const ClassReportsPage = () => {
+const Classes = () => {
   return (
     <div>
-      
+      <ClassesPage />
     </div>
-  )
-}
+  );
+};
 
-export default ClassReportsPage
+export default Classes;
