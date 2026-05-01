@@ -22,6 +22,8 @@ export const StudentEnrollment = ({
   const steps = [
     { id: 0, title: "Personal Info", sections: ["personal-info"] },
     { id: 1, title: "Academic Info", sections: ["academic-info"] },
+    { id: 2, title: "Contact & Health", sections: ["contact-health"] },
+    { id: 3, title: "Guardians", sections: ["guardians"] },
   ];
 
   const handleFormSubmit = (data: CreateStudentDto) => {
