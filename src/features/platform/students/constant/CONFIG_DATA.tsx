@@ -353,6 +353,7 @@ export const ENROLLMENT_STEPS = [
     sectionTitle: "Guardians Info",
     description: "Add details for the student's guardians.",
     type: "dynamic",
+    addButtonText: "Add Guardian",
     infoText: "You can add multiple guardians for the student.",
     fields: [
       {
