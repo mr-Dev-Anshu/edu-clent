@@ -51,6 +51,28 @@ export interface CreateStudentDto {
   guardians?: any[];
 }
 
+// Basic types for Class and Section
+export interface AcademicClass {
+  id: string;
+  name: string;
+  [key: string]: any;
+}
+
+export interface AcademicSection {
+  id: string;
+  name: string;
+  classId: string;
+  [key: string]: any;
+}
+
+export interface AcademicYear {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  [key: string]: any;
+}
+
 export interface UpdateStudentDto extends Partial<CreateStudentDto> {
   status?: StudentStatus;
 }

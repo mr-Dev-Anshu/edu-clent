@@ -1,8 +1,8 @@
 import { FilterConfig } from "@/common/components/shared/FilterBar";
-import { StatusBadge } from "@/common/components/shared";
+import { StatusBadge, ActionMenu } from "@/common/components/shared";
 import { formatDate } from "@/lib/formator";
 import { TableColumn } from "@/types";
-import { Calendar, UserCheck, Users } from "lucide-react";
+import { Calendar, UserCheck, Users, Eye, Pencil, IdCard, Send, RefreshCw } from "lucide-react";
 import { StudentType } from "../types";
 
 export const TABLE_COLUMNS: TableColumn<StudentType>[] = [
@@ -91,6 +91,23 @@ export const TABLE_COLUMNS: TableColumn<StudentType>[] = [
       <span className="text-[12px] text-slate-600">
         {formatDate(String(value))}
       </span>
+    ),
+  },
+  {
+    header: "Actions",
+    key: "actions",
+    width: "80px",
+    align: "center",
+    render: (_value, row) => (
+      <ActionMenu
+        actions={[
+          { label: "View Profile", icon: Eye, onClick: () => console.log("View", row.id) },
+          { label: "Edit Details", icon: Pencil, onClick: () => console.log("Edit", row.id) },
+          { label: "Generate ID Card", icon: IdCard, onClick: () => console.log("ID Card", row.id) },
+          { label: "Portal Invite", icon: Send, onClick: () => console.log("Invite", row.id) },
+          { label: "Change Status", icon: RefreshCw, onClick: () => console.log("Status", row.id) },
+        ]}
+      />
     ),
   },
 ];
@@ -255,16 +272,28 @@ export const ENROLLMENT_STEPS = [
         gridCols: 4,
       },
       {
+        id: "academicYearId",
+        label: "Academic Year *",
+        type: "select",
+        options: [],
+        gridCols: 12,
+        validation: { required: "Academic Year is required" },
+      },
+      {
         id: "classId",
-        label: "Class ID",
-        type: "text",
+        label: "Class ID *",
+        type: "select",
+        options: [],
         gridCols: 6,
+        validation: { required: "Class is required" },
       },
       {
         id: "sectionId",
-        label: "Section ID",
-        type: "text",
+        label: "Section ID *",
+        type: "select",
+        options: [],
         gridCols: 6,
+        validation: { required: "Section is required" },
       },
       {
         id: "previousSchool",

@@ -6,6 +6,9 @@ import { MultiStepFormEngine } from "@/common/components/shared/MultiStepFormEng
 import { ENROLLMENT_STEPS } from "../constant/CONFIG_DATA";
 import { useStudentService } from "../services/StudentService";
 import { CreateStudentDto } from "../types";
+import { useForm } from "react-hook-form";
+import { useClassService, useAcademicYearService, useSectionOptions } from "../services/StudentService";
+import { useMemo, useEffect } from "react";
 
 interface StudentEnrollmentProps {
   onCancel: () => void;
@@ -18,6 +21,86 @@ export const StudentEnrollment = ({
 }: StudentEnrollmentProps) => {
   const queryClient = useQueryClient();
   const createStudent = useStudentService.useCreate();
+
+  const methods = useForm({ mode: "onChange" });
+  const academicYearId = methods.watch("academicYearId");
+  const classId = methods.watch("classId");
+  const sectionId = methods.watch("sectionId");
+
+  const { data: academicYearsResponse } = useAcademicYearService.usePaginatedData(1, 100);
+  const { data: classesResponse } = useClassService.usePaginatedData(
+    1, 
+    100, 
+    { academicYearId }, 
+    { enabled: !!academicYearId }
+  );
+  const { data: sectionsOptionsData, isLoading: isLoadingSections } = useSectionOptions(
+    classId ?? null,
+    academicYearId ?? null
+  );
+
+  const classesData = classesResponse?.data;
+  const academicYearsData = academicYearsResponse?.data;
+
+  useEffect(() => {
+    // Automatically reset classId and sectionId when academicYearId changes
+    if (academicYearId) {
+      methods.setValue("classId", "");
+      methods.setValue("sectionId", "");
+    }
+  }, [academicYearId, methods]);
+
+  useEffect(() => {
+    // Auto-select the first academic year if none is selected
+    if (academicYearsData && academicYearsData.length > 0 && !academicYearId) {
+      const firstYearId = academicYearsData[0].id || academicYearsData[0]._id;
+      methods.setValue("academicYearId", firstYearId, { shouldValidate: true });
+    }
+  }, [academicYearsData, academicYearId, methods]);
+
+  useEffect(() => {
+    // Automatically reset sectionId when classId changes
+    if (classId) {
+      methods.setValue("sectionId", "");
+    }
+  }, [classId, methods]);
+
+  const dynamicFormConfig = useMemo(() => {
+    // Deep clone to avoid mutating constant
+    const config = JSON.parse(JSON.stringify(ENROLLMENT_STEPS));
+    
+    // Find academic-info step
+    const academicStep = config.find((s: any) => s.id === "academic-info");
+    if (academicStep) {
+      const classField = academicStep.fields.find((f: any) => f.id === "classId");
+      const sectionField = academicStep.fields.find((f: any) => f.id === "sectionId");
+      const academicYearField = academicStep.fields.find((f: any) => f.id === "academicYearId");
+
+      if (classField && classesData) {
+        classField.options = classesData.map((c: any) => ({
+          label: c.name,
+          value: c.id || c._id
+        }));
+      }
+
+      if (sectionField) {
+        sectionField.options = sectionsOptionsData ? sectionsOptionsData.map((s: any) => ({
+          label: s.name,
+          value: s.id || s._id
+        })) : [];
+        sectionField.isLoading = isLoadingSections;
+        sectionField.disabled = !classId || !academicYearId || isLoadingSections;
+      }
+
+      if (academicYearField && academicYearsData) {
+        academicYearField.options = academicYearsData.map((a: any) => ({
+          label: a.name || `${a.startDate} - ${a.endDate}`,
+          value: a.id || a._id
+        }));
+      }
+    }
+    return config;
+  }, [classesData, sectionsOptionsData, academicYearsData, classId, academicYearId, isLoadingSections]);
 
   const steps = [
     { id: 0, title: "Personal Info", sections: ["personal-info"] },
@@ -59,9 +142,10 @@ export const StudentEnrollment = ({
 
       <MultiStepFormEngine
         steps={steps}
-        formConfig={ENROLLMENT_STEPS}
+        formConfig={dynamicFormConfig}
         onCancel={onCancel}
         onSubmit={handleFormSubmit}
+        methods={methods}
         submitButtonText={
           createStudent.isPending ? "Processing..." : "Enroll Student"
         }

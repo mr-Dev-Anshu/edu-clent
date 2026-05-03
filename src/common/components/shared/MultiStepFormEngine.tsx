@@ -18,6 +18,7 @@ interface MultiStepFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
   submitButtonText?: string;
+  methods?: any; // UseFormReturn from react-hook-form
 }
 
 export const MultiStepFormEngine = ({
@@ -26,12 +27,14 @@ export const MultiStepFormEngine = ({
   onSubmit,
   onCancel,
   submitButtonText = "Confirm & Submit",
+  methods: externalMethods,
 }: MultiStepFormProps) => {
   const [activeStep, setActiveStep] = useState(0);
-  const methods = useForm({
+  const internalMethods = useForm({
     mode: "onChange",
     shouldUnregister: false,
   });
+  const methods = externalMethods || internalMethods;
 
   const handleNext = async (e: React.MouseEvent) => {
     e.preventDefault();

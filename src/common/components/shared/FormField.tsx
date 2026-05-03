@@ -21,10 +21,13 @@ export const FormField = ({ field }: { field: any }) => {
       </label>
       
       {field.type === 'select' ? (
-        <select {...register(field.id, field.validation)} className={baseInputStyles}>
-          {field.options.map((opt: string) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
+        <select {...register(field.id, field.validation)} className={baseInputStyles} defaultValue="">
+          <option value="" disabled>Select an option</option>
+          {field.options.map((opt: any) => {
+            const val = typeof opt === 'object' ? opt.value : opt;
+            const lbl = typeof opt === 'object' ? opt.label : opt;
+            return <option key={val} value={val}>{lbl}</option>;
+          })}
         </select>
       ) : (
         <input
