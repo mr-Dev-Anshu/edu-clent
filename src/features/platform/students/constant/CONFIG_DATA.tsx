@@ -5,7 +5,17 @@ import { TableColumn } from "@/types";
 import { Calendar, UserCheck, Users, Eye, Pencil, IdCard, Send, RefreshCw } from "lucide-react";
 import { StudentType } from "../types";
 
-export const TABLE_COLUMNS: TableColumn<StudentType>[] = [
+export interface StudentTableActionHandlers {
+  onViewProfile: (student: StudentType) => void;
+  onEditDetails: (student: StudentType) => void;
+  onGenerateIdCard?: (student: StudentType) => void;
+  onPortalInvite?: (student: StudentType) => void;
+  onChangeStatus: (student: StudentType) => void;
+}
+
+export const getStudentTableColumns = (
+  handlers: StudentTableActionHandlers,
+): TableColumn<StudentType>[] => [
   {
     header: "Admission No.",
     key: "admissionNumber",
@@ -84,7 +94,7 @@ export const TABLE_COLUMNS: TableColumn<StudentType>[] = [
     ),
   },
   {
-    header: "Created At",
+    header: "Enrollment Date",
     key: "createdAt",
     width: "150px",
     render: (value) => (
@@ -101,11 +111,31 @@ export const TABLE_COLUMNS: TableColumn<StudentType>[] = [
     render: (_value, row) => (
       <ActionMenu
         actions={[
-          { label: "View Profile", icon: Eye, onClick: () => console.log("View", row.id) },
-          { label: "Edit Details", icon: Pencil, onClick: () => console.log("Edit", row.id) },
-          { label: "Generate ID Card", icon: IdCard, onClick: () => console.log("ID Card", row.id) },
-          { label: "Portal Invite", icon: Send, onClick: () => console.log("Invite", row.id) },
-          { label: "Change Status", icon: RefreshCw, onClick: () => console.log("Status", row.id) },
+          {
+            label: "View Profile",
+            icon: Eye,
+            onClick: () => handlers.onViewProfile(row),
+          },
+          {
+            label: "Edit Details",
+            icon: Pencil,
+            onClick: () => handlers.onEditDetails(row),
+          },
+          {
+            label: "Generate ID Card",
+            icon: IdCard,
+            onClick: () => handlers.onGenerateIdCard?.(row),
+          },
+          {
+            label: "Portal Invite",
+            icon: Send,
+            onClick: () => handlers.onPortalInvite?.(row),
+          },
+          {
+            label: "Change Status",
+            icon: RefreshCw,
+            onClick: () => handlers.onChangeStatus(row),
+          },
         ]}
       />
     ),

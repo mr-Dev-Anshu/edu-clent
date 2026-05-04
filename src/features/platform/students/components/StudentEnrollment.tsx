@@ -5,7 +5,12 @@ import { toast } from "sonner";
 import { MultiStepFormEngine } from "@/common/components/shared/MultiStepFormEngine";
 import { ENROLLMENT_STEPS } from "../constant/CONFIG_DATA";
 import { useStudentService } from "../services/StudentService";
-import { CreateStudentDto } from "../types";
+import {
+  AcademicClass,
+  AcademicSection,
+  AcademicYear,
+  CreateStudentDto,
+} from "../types";
 import { useForm } from "react-hook-form";
 import { useClassService, useAcademicYearService, useSectionOptions } from "../services/StudentService";
 import { useMemo, useEffect } from "react";
@@ -15,6 +20,23 @@ interface StudentEnrollmentProps {
   onSuccess: () => void;
 }
 
+interface EnrollmentFieldOption {
+  label: string;
+  value: string;
+}
+
+interface EnrollmentFieldConfig {
+  id: string;
+  options?: EnrollmentFieldOption[] | string[];
+  isLoading?: boolean;
+  disabled?: boolean;
+}
+
+interface EnrollmentSectionConfig {
+  id: string;
+  fields: EnrollmentFieldConfig[];
+}
+
 export const StudentEnrollment = ({
   onCancel,
   onSuccess,
@@ -22,10 +44,9 @@ export const StudentEnrollment = ({
   const queryClient = useQueryClient();
   const createStudent = useStudentService.useCreate();
 
-  const methods = useForm({ mode: "onChange" });
+  const methods = useForm<CreateStudentDto>({ mode: "onChange" });
   const academicYearId = methods.watch("academicYearId");
   const classId = methods.watch("classId");
-  const sectionId = methods.watch("sectionId");
 
   const { data: academicYearsResponse } = useAcademicYearService.usePaginatedData(1, 100);
   const { data: classesResponse } = useClassService.usePaginatedData(
@@ -53,7 +74,7 @@ export const StudentEnrollment = ({
   useEffect(() => {
     // Auto-select the first academic year if none is selected
     if (academicYearsData && academicYearsData.length > 0 && !academicYearId) {
-      const firstYearId = academicYearsData[0].id || academicYearsData[0]._id;
+      const firstYearId = academicYearsData[0].id;
       methods.setValue("academicYearId", firstYearId, { shouldValidate: true });
     }
   }, [academicYearsData, academicYearId, methods]);
@@ -66,36 +87,37 @@ export const StudentEnrollment = ({
   }, [classId, methods]);
 
   const dynamicFormConfig = useMemo(() => {
-    // Deep clone to avoid mutating constant
-    const config = JSON.parse(JSON.stringify(ENROLLMENT_STEPS));
+    const config = structuredClone(ENROLLMENT_STEPS) as EnrollmentSectionConfig[];
     
     // Find academic-info step
-    const academicStep = config.find((s: any) => s.id === "academic-info");
+    const academicStep = config.find((section) => section.id === "academic-info");
     if (academicStep) {
-      const classField = academicStep.fields.find((f: any) => f.id === "classId");
-      const sectionField = academicStep.fields.find((f: any) => f.id === "sectionId");
-      const academicYearField = academicStep.fields.find((f: any) => f.id === "academicYearId");
+      const classField = academicStep.fields.find((field) => field.id === "classId");
+      const sectionField = academicStep.fields.find((field) => field.id === "sectionId");
+      const academicYearField = academicStep.fields.find((field) => field.id === "academicYearId");
 
       if (classField && classesData) {
-        classField.options = classesData.map((c: any) => ({
-          label: c.name,
-          value: c.id || c._id
+        classField.options = classesData.map((studentClass: AcademicClass) => ({
+          label: String(studentClass.name),
+          value: String(studentClass.id),
         }));
       }
 
       if (sectionField) {
-        sectionField.options = sectionsOptionsData ? sectionsOptionsData.map((s: any) => ({
-          label: s.name,
-          value: s.id || s._id
-        })) : [];
+        sectionField.options = sectionsOptionsData
+          ? sectionsOptionsData.map((section: AcademicSection) => ({
+              label: String(section.name),
+              value: String(section.id),
+            }))
+          : [];
         sectionField.isLoading = isLoadingSections;
         sectionField.disabled = !classId || !academicYearId || isLoadingSections;
       }
 
       if (academicYearField && academicYearsData) {
-        academicYearField.options = academicYearsData.map((a: any) => ({
-          label: a.name || `${a.startDate} - ${a.endDate}`,
-          value: a.id || a._id
+        academicYearField.options = academicYearsData.map((academicYear: AcademicYear) => ({
+          label: academicYear.name || `${academicYear.startDate} - ${academicYear.endDate}`,
+          value: String(academicYear.id),
         }));
       }
     }

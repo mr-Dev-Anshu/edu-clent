@@ -1,15 +1,38 @@
 import { apiKernel } from '@/config/apiKernel';
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+} from '@tanstack/react-query';
+
+interface PaginatedQueryResult<T> {
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  data: T[];
+}
 
 export const kernelHook = <T, CreateDto, UpdateDto>(
   key: string,
   kernel: ReturnType<typeof apiKernel<T, CreateDto, UpdateDto>>
 ) => ({
   useData: () => 
-    useQuery({ queryKey: [key, 'all'], queryFn: kernel.fetch, retry: 1 }),
+    useQuery<T[]>({ queryKey: [key, 'all'], queryFn: kernel.fetch, retry: 1 }),
 
- usePaginatedData: (page: number = 1, limit: number = 10, filters?: any, options?: any) => 
-  useQuery({
+ usePaginatedData: (
+  page: number = 1,
+  limit: number = 10,
+  filters?: Record<string, unknown>,
+  options?: Omit<
+    UseQueryOptions<PaginatedQueryResult<T>, Error>,
+    'queryKey' | 'queryFn' | 'placeholderData'
+  >
+ ) => 
+  useQuery<PaginatedQueryResult<T>, Error>({
     queryKey: [key, 'list', { page, limit, ...filters }], 
     queryFn: () => kernel.fetchPage(page, limit, filters),
     placeholderData: keepPreviousData,
@@ -17,7 +40,7 @@ export const kernelHook = <T, CreateDto, UpdateDto>(
     ...options,
   }),
   useSingleData: (id: string | number | null) =>
-    useQuery({
+    useQuery<T, Error>({
       queryKey: [key, 'detail', id],
       queryFn: () => kernel.getById(id!),
       enabled: !!id, 

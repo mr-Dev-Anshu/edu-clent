@@ -1,21 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { DataTable, FilterBar, Modal } from "@/common/components/shared";
 import { useHeader } from "@/hooks/useHeader";
 import { SortState } from "@/types";
 import { StudentEnrollment } from "./components/StudentEnrollment";
+import { StudentStatusDialog } from "./components/StudentStatusDialog";
 import {
   ANALYSIS_CARDS,
   FILTER_CONFIGS,
   STUDENT_HEADER_CONFIG,
-  TABLE_COLUMNS,
+  getStudentTableColumns,
 } from "./constant/CONFIG_DATA";
 import { useStudentService } from "./services/StudentService";
 import { StudentType } from "./types";
 
 export const StudentPage = () => {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     gender: "",
@@ -23,6 +27,9 @@ export const StudentPage = () => {
     classId: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<StudentType | null>(
+    null,
+  );
   const [sort, setSort] = useState<SortState | null>(null);
   const pageSize = 10;
 
@@ -107,6 +114,32 @@ export const StudentPage = () => {
     setIsModalOpen(false);
   };
 
+  const tableColumns = useMemo(
+    () =>
+      getStudentTableColumns({
+        onViewProfile: (student) => {
+          router.push(`/platform/students/${student.id}`);
+        },
+        onEditDetails: (student) => {
+          router.push(`/platform/students/${student.id}/edit`);
+        },
+        onGenerateIdCard: (student) => {
+          toast.info(
+            `ID card generation for ${student.firstName} is not available yet.`,
+          );
+        },
+        onPortalInvite: (student) => {
+          toast.info(
+            `Portal invite for ${student.firstName} is not available yet.`,
+          );
+        },
+        onChangeStatus: (student) => {
+          setSelectedStudent(student);
+        },
+      }),
+    [router],
+  );
+
   return (
     <div className="space-y-6 p-6">
       <FilterBar
@@ -123,7 +156,7 @@ export const StudentPage = () => {
 
       <DataTable<StudentType>
         data={students}
-        columns={TABLE_COLUMNS}
+        columns={tableColumns}
         total={studentResponse?.total ?? 0}
         page={page}
         pageSize={pageSize}
@@ -147,6 +180,12 @@ export const StudentPage = () => {
           />
         </div>
       </Modal>
+
+      <StudentStatusDialog
+        isOpen={!!selectedStudent}
+        student={selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+      />
     </div>
   );
 };

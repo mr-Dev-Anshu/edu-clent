@@ -25,7 +25,7 @@ export const apiKernel = <T, CreateDto = Partial<T>, UpdateDto = Partial<T>>(
   create: (data: CreateDto) => api.post<T>(path, data).then(r => r.data),
 
   update: (id: string | number, data: UpdateDto) => 
-    api.put<T>(`${path}/${id}`, data).then(r => r.data),
+    api.patch<T>(`${path}/${id}`, data).then(r => r.data),
 
   remove: (id: string | number) => api.delete(`${path}/${id}`).then(r => r.data),
 });
