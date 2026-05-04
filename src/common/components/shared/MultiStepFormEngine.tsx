@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +19,7 @@ interface MultiStepFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
   submitButtonText?: string;
+  defaultValues?: Record<string, any>;
 }
 
 export const MultiStepFormEngine = ({
@@ -26,9 +28,11 @@ export const MultiStepFormEngine = ({
   onSubmit,
   onCancel,
   submitButtonText = "Confirm & Submit",
+  defaultValues,
 }: MultiStepFormProps) => {
   const [activeStep, setActiveStep] = useState(0);
   const methods = useForm({
+    defaultValues,
     mode: "onChange",
     shouldUnregister: false,
   });
@@ -40,7 +44,7 @@ export const MultiStepFormEngine = ({
     const currentStepSections = steps[activeStep].sections;
     const fieldsToValidate = formConfig
       .filter((sec) => currentStepSections.includes(sec.id))
-      .flatMap((sec) => sec.fields.map((f) => f.id));
+      .flatMap((sec: any) => sec.fields.map((f: any) => f.id));
 
     // Sirf current step ke fields validate honge
     const isValid = await methods.trigger(fieldsToValidate);
@@ -62,7 +66,8 @@ export const MultiStepFormEngine = ({
   return (
     <FormProvider {...methods}>
       <div className="space-y-8 p-4">
-        <div className="flex items-center justify-between max-w-2xl mx-auto mb-10">
+        {steps.length > 1 && (
+          <div className="flex items-center justify-between max-w-2xl mx-auto mb-10">
           {steps.map((step, idx) => (
             <React.Fragment key={step.id}>
               <div className="flex flex-col items-center gap-2">
@@ -96,6 +101,7 @@ export const MultiStepFormEngine = ({
             </React.Fragment>
           ))}
         </div>
+        )}
 
         <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
           <AnimatePresence mode="wait">
