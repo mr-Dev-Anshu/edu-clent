@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { useHeader } from "@/hooks/useHeader";
 import { DataTable, DeleteConfirmDialog, FilterBar, Modal } from "@/common/components/shared";
-import { useClassWithSections, useAcademicYear, useClass, useEnrollment, AcademicYear } from "./services/ClassService";
+import { useClassWithSections, useAcademicYear, useClass, AcademicYear, PaginatedResponse } from "./services/ClassService";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
 import { classColumns, dashStats, headerConfig, classFilterConfigs, ClassWithSections } from "./constant/CONFIG_DATA";
 import { ClassForm } from "./components/ClassForm";
@@ -11,7 +11,6 @@ import { EditClassForm } from "./components/EditClassForm";
 import { ManageSectionsForm } from "./components/ManageSectionsForm";
 import { ClassBulkImporter } from "./components/ClassBulkImporter";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 const ClassesPage = () => {
   const [page, setPage] = useState(1);
@@ -21,7 +20,6 @@ const ClassesPage = () => {
   const [isManageSectionsFormOpen, setIsManageSectionsFormOpen] = useState(false);
   const [isManageStudentsOpen, setIsManageStudentsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassWithSections | null>(null);
-  const [actionType, setActionType] = useState<string | null>(null);
   
   const [filters, setFilters] = useState({
     search: "",
@@ -29,7 +27,6 @@ const ClassesPage = () => {
   });
 
   const pageSize = 10;
-  const queryClient = useQueryClient();
   const deleteClass = useClass.useRemove();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -41,86 +38,25 @@ const ClassesPage = () => {
   const manageSectionsDisabledReason = currentAcademicYear?.name
     ? `You can only manage sections for the current academic year. Switch back to ${currentAcademicYear.name} to continue.`
     : "You can only manage sections for the current academic year.";
-  const { data: enrollments = [] } = useEnrollment.useData();
-  const { data: classesData = [], isLoading, isFetching } = useClassWithSections.useData();
 
-  // Map sectionId to classId for easier lookup
-  const sectionToClassMap = useMemo(() => {
-    const map = new Map<string, string>();
-    classesData.forEach((cls) => {
-      cls.sections.forEach((sec) => {
-        map.set(sec.id, cls.id);
-      });
-    });
-    return map;
-  }, [classesData]);
+  // Prepare filters for backend
+  const backendFilters = {
+    ...(filters.search && { search: filters.search }),
+    ...(selectedAcademicYearId && { academicYearId: selectedAcademicYearId }),
+  };
 
-  // Count enrolled students per class
-  const enrollmentsByClass = useMemo(() => {
-    const counts = new Map<string, number>();
-    enrollments.forEach((enrollment) => {
-      const sectionId = enrollment.sectionId || enrollment.section?.id;
-      const classId = enrollment.classId || enrollment.section?.classId || (sectionId ? sectionToClassMap.get(sectionId) : undefined);
-      if (classId) {
-        counts.set(classId, (counts.get(classId) || 0) + 1);
-      }
-    });
-    return counts;
-  }, [enrollments, sectionToClassMap]);
-
-  React.useEffect(() => {
-    if (!filters.academicYearId && selectedAcademicYearId) {
-      setFilters((prev) => ({
-        ...prev,
-        academicYearId: selectedAcademicYearId,
-      }));
-    }
-  }, [filters.academicYearId, selectedAcademicYearId]);
-
-  // Invalidate query cache when academic year changes to ensure fresh data
-  React.useEffect(() => {
-    if (selectedAcademicYearId) {
-      queryClient.invalidateQueries({
-        queryKey: ['classes', 'with-sections'],
-      });
-    }
-  }, [selectedAcademicYearId, queryClient]);
-
-  // Filter and paginate data
-  const filteredData = useMemo(() => {
-    let result = classesData;
-
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(
-        (cls) =>
-          cls.name.toLowerCase().includes(searchLower) ||
-          (cls.numericLevel?.toString() || "").includes(searchLower) ||
-          cls.description?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    return result;
-  }, [classesData, filters.search]);
-
-  const paginatedData = filteredData.slice(
-    (page - 1) * pageSize,
-    page * pageSize
+  // Fetch paginated data from backend
+  const { data: classesResponse = {} as PaginatedResponse<ClassWithSections>, isLoading, isFetching } = useClassWithSections.usePaginatedData(
+    page,
+    pageSize,
+    backendFilters
   );
 
+  const paginatedData = classesResponse?.data || [];
+  const total = classesResponse?.total || 0;
+
   const handleFilterChange = (id: string, val: string) => {
-    if (id === "academicYearId") {
-      setFilters((prev) => ({
-        ...prev,
-        academicYearId: val,
-      }));
-      // Invalidate cache to force re-fetch for new academic year
-      queryClient.invalidateQueries({
-        queryKey: ['classes', 'with-sections'],
-      });
-    } else {
-      setFilters((prev) => ({ ...prev, [id]: val }));
-    }
+    setFilters((prev) => ({ ...prev, [id]: val }));
     setPage(1);
   };
 
@@ -132,7 +68,7 @@ const ClassesPage = () => {
   // Handle action menu clicks - receives row data directly from ActionMenu
   const handleActionClick = (action: string, classId: string, rowData?: ClassWithSections) => {
     const selectedRowData = rowData || 
-      paginatedData.find((cls) => cls.id === classId);
+      paginatedData.find((cls: ClassWithSections) => cls.id === classId);
     
     if (!selectedRowData) return;
 
@@ -144,17 +80,14 @@ const ClassesPage = () => {
     switch (action) {
       case 'edit':
         setSelectedClass(selectedRowData as ClassWithSections);
-        setActionType('edit');
         setIsEditClassFormOpen(true);
         break;
       case 'manage-sections':
         setSelectedClass(selectedRowData as ClassWithSections);
-        setActionType('manage-sections');
         setIsManageSectionsFormOpen(true);
         break;
       case 'manage-students':
         setSelectedClass(selectedRowData as ClassWithSections);
-        setActionType('manage-students');
         setIsManageStudentsOpen(true);
         break;
       case 'delete':
@@ -166,17 +99,9 @@ const ClassesPage = () => {
 
   // Transform data for table display
   const tableData = paginatedData.map((cls: ClassWithSections) => {
-    // Filter sections by selected academic year
-    const filteredSections = cls.sections.filter(
-      (sec) => sec.academicYearId === selectedAcademicYearId
-    );
-    
-    const enrolledCount = enrollmentsByClass.get(cls.id) || 0;
-    
     return {
       ...cls,
-      sections: filteredSections,
-      enrollment: enrolledCount.toString(),
+      enrollment: "0",
       classTeacher: "TBD",
       status: "active",
       onActionClick: handleActionClick,
@@ -196,7 +121,6 @@ const ClassesPage = () => {
       toast.success("Class deleted successfully");
       setIsDeleteConfirmOpen(false);
       setSelectedClass(null);
-      await queryClient.refetchQueries({ queryKey: ["classes-with-sections"] });
     } catch (error: unknown) {
       const message =
         typeof error === "object" && error !== null && "response" in error
@@ -250,7 +174,7 @@ const ClassesPage = () => {
           data={tableData}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           columns={classColumns as any}
-          total={filteredData.length}
+          total={total}
           page={page}
           pageSize={pageSize}
           onPageChange={(newPage) => setPage(newPage)}
@@ -261,11 +185,10 @@ const ClassesPage = () => {
 
       {/* Create/Edit Class Modal */}
       <Modal
-        isOpen={isClassModalOpen && actionType !== "edit"}
+        isOpen={isClassModalOpen && !isEditClassFormOpen}
         onClose={() => {
           setIsClassModalOpen(false);
           setSelectedClass(null);
-          setActionType(null);
         }}
         title="Create New Class"
         className="max-w-3xl"
@@ -275,12 +198,10 @@ const ClassesPage = () => {
             onCancel={() => {
               setIsClassModalOpen(false);
               setSelectedClass(null);
-              setActionType(null);
             }}
             onSuccess={() => {
               setIsClassModalOpen(false);
               setSelectedClass(null);
-              setActionType(null);
             }}
           />
         </div>
@@ -309,6 +230,7 @@ const ClassesPage = () => {
         onCancel={handleDeleteCancel}
         isPending={deleteClass.isPending}
       />
+
       {/* Edit Class Form */}
       {isEditClassFormOpen && selectedClass && (
         <Modal
@@ -316,7 +238,6 @@ const ClassesPage = () => {
           onClose={() => {
             setIsEditClassFormOpen(false);
             setSelectedClass(null);
-            setActionType(null);
           }}
           title="Edit Class"
           className="max-w-3xl"
@@ -327,12 +248,10 @@ const ClassesPage = () => {
               onClose={() => {
                 setIsEditClassFormOpen(false);
                 setSelectedClass(null);
-                setActionType(null);
               }}
               onSuccess={() => {
                 setIsEditClassFormOpen(false);
                 setSelectedClass(null);
-                setActionType(null);
               }}
             />
           </div>
@@ -346,7 +265,7 @@ const ClassesPage = () => {
           onClose={() => {
             setIsManageSectionsFormOpen(false);
             setSelectedClass(null);
-            setActionType(null);
+
           }}
           title="Manage Sections"
           className="max-w-3xl"
@@ -357,12 +276,10 @@ const ClassesPage = () => {
               onClose={() => {
                 setIsManageSectionsFormOpen(false);
                 setSelectedClass(null);
-                setActionType(null);
               }}
               onSuccess={() => {
                 setIsManageSectionsFormOpen(false);
                 setSelectedClass(null);
-                setActionType(null);
               }}
             />
           </div>
@@ -376,7 +293,6 @@ const ClassesPage = () => {
           onClose={() => {
             setIsManageStudentsOpen(false);
             setSelectedClass(null);
-            setActionType(null);
           }}
           title="Manage Students"
           className="max-w-4xl"

@@ -1,5 +1,5 @@
 import { FilterConfig } from "@/common/components/shared/FilterBar";
-import { Edit2, Layers3, Trash2, Users, BookOpen, TrendingUp } from "lucide-react";
+import { Edit2, Layers3, Trash2, Users, BookOpen, TrendingUp, Eye } from "lucide-react";
 import { Section } from "../services/ClassService";
 import { ActionMenu, ActionMenuItem } from "@/common/components/shared/ActionMenu";
 import React from "react";
@@ -79,9 +79,11 @@ export const dashStats = [
 ];
 
 export const headerConfig = {
-  moduleName: "Class Management",
+  moduleName: "Classes Directory",
   items: [
-    { label: "Classes", href: "/platform/classes" },
+    { label: "All Classes", href: "/platform/classes" },
+    { label: "Sections", href: "/platform/classes/sections" },
+    { label: "Enrollments", href: "/platform/classes/enrollments" },
   ],
   actions: [
     {
@@ -193,6 +195,11 @@ export const classColumns = [
       }
     ) => {
       const actions: ActionMenuItem[] = [
+        {
+          label: "View Details",
+          icon: Eye,
+          onClick: () => row.onActionClick?.("view", val, row as ClassWithSections),
+        },
         {
           label: "Edit Class",
           icon: Edit2,

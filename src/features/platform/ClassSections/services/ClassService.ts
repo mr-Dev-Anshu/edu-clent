@@ -12,6 +12,24 @@ export interface Class {
   updatedAt: string;
 }
 
+export interface ClassTeacher {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  status: string;
+}
+
+export interface AcademicYearInfo {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+  isLocked: boolean;
+}
+
 export interface Section {
   id: string;
   name: string;
@@ -19,6 +37,8 @@ export interface Section {
   academicYearId: string;
   capacity: number;
   classTeacherId?: string;
+  classTeacher?: ClassTeacher;
+  academicYear?: AcademicYearInfo;
   tenantId: string;
   createdAt: string;
   updatedAt: string;
@@ -44,9 +64,18 @@ export interface Enrollment {
   section?: Section;
 }
 
+export interface PaginatedResponse<T> {
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  data: T[];
+}
+
 // ==================== API Kernels ====================
 const classKernel = apiKernel<Class>('/classes');
-const classWithSectionsKernel = apiKernel<ClassWithSections>('/classes/with-sections/all');
+const classWithSectionsKernel = apiKernel<ClassWithSections>('/classes/with-sections');
 const sectionKernel = apiKernel<Section>('/sections');
 const enrollmentKernel = apiKernel<Enrollment>('/enrollments');
 const academicYearKernel = apiKernel<AcademicYear>('/academic-years');
