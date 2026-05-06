@@ -1,14 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import { EmptyState, SectionCard } from "@/common/components/shared";
 import { MultiStepFormEngine } from "@/common/components/shared/MultiStepFormEngine";
-import { useHeader } from "@/hooks/useHeader";
 import { useStudentService } from "../services/StudentService";
 import {
   useAcademicYearService,
@@ -25,8 +21,9 @@ import {
   UpdateStudentDto,
 } from "../types";
 
-interface StudentEditFormProps {
+interface StudentEditFormModalProps {
   studentId: string;
+  onClose: () => void;
 }
 
 interface EnrollmentFieldOption {
@@ -63,7 +60,7 @@ const getFullName = (student?: {
     .join(" ");
 
 const getDefaultValues = (student: StudentType): CreateStudentDto => ({
-  email: student.email ?? "",
+  email: student.user?.email ?? student.email ?? "",
   firstName: student.firstName ?? "",
   middleName: student.middleName ?? "",
   lastName: student.lastName ?? "",
@@ -89,21 +86,23 @@ const getDefaultValues = (student: StudentType): CreateStudentDto => ({
   address: student.address ?? "",
   city: student.city ?? "",
   pincode: student.pincode ?? "",
-  academicYearId: student.academicYearId ?? "",
-  classId: student.classId ?? "",
-  sectionId: student.sectionId ?? "",
+  academicYearId: student.enrollment?.academicYear.id ?? student.academicYearId ?? "",
+  classId: student.enrollment?.section.class.id ?? student.classId ?? "",
+  sectionId: student.enrollment?.section.id ?? student.sectionId ?? "",
   guardians: student.guardians ?? [],
 });
 
 const EditSkeleton = () => (
-  <div className="space-y-6 p-6">
+  <div className="space-y-6">
     <div className="h-28 animate-pulse rounded-2xl bg-slate-200" />
-    <div className="h-[32rem] animate-pulse rounded-2xl bg-slate-200" />
+    <div className="h-128 animate-pulse rounded-2xl bg-slate-200" />
   </div>
 );
 
-export const StudentEditForm = ({ studentId }: StudentEditFormProps) => {
-  const router = useRouter();
+export const StudentEditFormModal = ({
+  studentId,
+  onClose,
+}: StudentEditFormModalProps) => {
   const methods = useForm<CreateStudentDto>({
     mode: "onChange",
     defaultValues: {
@@ -137,21 +136,6 @@ export const StudentEditForm = ({ studentId }: StudentEditFormProps) => {
 
   const academicYearsData = academicYearsResponse?.data;
   const classesData = classesResponse?.data;
-
-  const headerConfig = useMemo(
-    () => ({
-      moduleName: "Students",
-      items: [
-        { label: "Directory", href: "/platform/students" },
-        { label: "Profile", href: `/platform/students/${studentId}` },
-        { label: "Edit Details", href: `/platform/students/${studentId}/edit` },
-      ],
-      actions: [],
-    }),
-    [studentId],
-  );
-
-  useHeader(headerConfig, () => {});
 
   useEffect(() => {
     if (!student) {
@@ -287,7 +271,7 @@ export const StudentEditForm = ({ studentId }: StudentEditFormProps) => {
       {
         onSuccess: () => {
           toast.success("Student details updated successfully.");
-          router.push(`/platform/students/${studentId}`);
+          onClose();
         },
         onError: (mutationError: unknown) => {
           const errorMessage =
@@ -307,45 +291,26 @@ export const StudentEditForm = ({ studentId }: StudentEditFormProps) => {
 
   if (!student) {
     return (
-      <div className="p-6">
-        <SectionCard>
-          <EmptyState
-            title="Student record not found"
-            description={
-              error instanceof Error
-                ? error.message
-                : "We couldn't open this student for editing."
-            }
-            action={
-              <Link
-                href="/platform/students"
-                className="inline-flex rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#152d4a]"
-              >
-                Back to Directory
-              </Link>
-            }
-          />
-        </SectionCard>
-      </div>
+      <SectionCard>
+        <EmptyState
+          title="Student record not found"
+          description={
+            error instanceof Error
+              ? error.message
+              : "We couldn't open this student for editing."
+          }
+        />
+      </SectionCard>
     );
   }
 
   const studentName = getFullName(student);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <SectionCard
         title={`Edit ${studentName}`}
         description="Update the student profile, academic mapping, and guardian information."
-        headerSlot={
-          <Link
-            href={`/platform/students/${studentId}`}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            <ArrowLeft size={15} />
-            View Profile
-          </Link>
-        }
       >
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Review the existing record carefully before saving. Status can also be changed from the profile page or the students list action menu.
@@ -368,7 +333,7 @@ export const StudentEditForm = ({ studentId }: StudentEditFormProps) => {
           <MultiStepFormEngine
             steps={steps}
             formConfig={dynamicFormConfig}
-            onCancel={() => router.push(`/platform/students/${studentId}`)}
+            onCancel={onClose}
             onSubmit={handleSubmit}
             methods={methods}
             submitButtonText={

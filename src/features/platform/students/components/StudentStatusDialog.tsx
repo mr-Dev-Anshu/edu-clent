@@ -28,11 +28,11 @@ const STATUS_OPTIONS: Array<{
     label: "Inactive",
     description: "The student remains on record, but is no longer active.",
   },
-  {
-    value: "transferred",
-    label: "Transferred",
-    description: "Use this when the student has moved to another school.",
-  },
+  // {
+  //   value: "transferred",
+  //   label: "Transferred",
+  //   description: "Use this when the student has moved to another school.",
+  // },
 ];
 
 const getDisplayStatus = (status: StudentStatus) => {

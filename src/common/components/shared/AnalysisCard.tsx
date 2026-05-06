@@ -43,7 +43,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({
 
   return (
     <div 
-      className={`rounded-2xl p-5 flex flex-col justify-between min-h-[150px] max-h-[150px] transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${variants[variant]} ${className}`}
+      className={`rounded-2xl p-5 flex flex-col justify-between  transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${variants[variant]} ${className}`}
     >
       {/* 1. Header Section */}
       <div className="flex justify-between items-start">
@@ -66,7 +66,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({
 
       {/* 3. Footer Section */}
       {footer && (
-        <div className="mt-auto pt-3 border-t border-current/5 text-[12px] flex items-center gap-1.5 opacity-80">
+        <div className="mt-auto pt-3 border-t border-current/5 text-[12px] flex items-center gap-1.5 opacity-80 ">
           {footer}
         </div>
       )}

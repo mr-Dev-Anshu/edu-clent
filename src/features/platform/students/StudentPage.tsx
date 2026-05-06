@@ -10,6 +10,8 @@ import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { SortState } from "@/types";
 import { StudentEnrollment } from "./components/StudentEnrollment";
 import { StudentStatusDialog } from "./components/StudentStatusDialog";
+import { StudentProfileModal } from "./components/StudentProfileModal";
+import { StudentEditFormModal } from "./components/StudentEditFormModal";
 import {
   ANALYSIS_CARDS,
   FILTER_CONFIGS,
@@ -32,6 +34,8 @@ export const StudentPage = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentType | null>(
     null,
   );
+  const [selectedStudentForProfile, setSelectedStudentForProfile] = useState<string | null>(null);
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState<string | null>(null);
   const [sort, setSort] = useState<SortState | null>(null);
   const pageSize = 10;
 
@@ -153,10 +157,10 @@ export const StudentPage = () => {
     () =>
       getStudentTableColumns({
         onViewProfile: (student) => {
-          router.push(`/platform/students/${student.id}`);
+          setSelectedStudentForProfile(student.id);
         },
         onEditDetails: (student) => {
-          router.push(`/platform/students/${student.id}/edit`);
+          setSelectedStudentForEdit(student.id);
         },
         onGenerateIdCard: (student) => {
           toast.info(
@@ -213,6 +217,38 @@ export const StudentPage = () => {
             onCancel={() => setIsModalOpen(false)}
             onSuccess={handleEnrollmentSuccess}
           />
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!selectedStudentForProfile}
+        onClose={() => setSelectedStudentForProfile(null)}
+        title="Student Profile"
+        className="max-w-5xl"
+      >
+        <div className="custom-scrollbar max-h-[80vh] overflow-y-auto pr-2">
+          {selectedStudentForProfile && (
+            <StudentProfileModal
+              studentId={selectedStudentForProfile}
+              onClose={() => setSelectedStudentForProfile(null)}
+            />
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!selectedStudentForEdit}
+        onClose={() => setSelectedStudentForEdit(null)}
+        title="Edit Student Details"
+        className="max-w-5xl"
+      >
+        <div className="custom-scrollbar max-h-[80vh] overflow-y-auto pr-2">
+          {selectedStudentForEdit && (
+            <StudentEditFormModal
+              studentId={selectedStudentForEdit}
+              onClose={() => setSelectedStudentForEdit(null)}
+            />
+          )}
         </div>
       </Modal>
 

@@ -316,7 +316,7 @@ export const ENROLLMENT_STEPS = [
       },
       {
         id: "classId",
-        label: "Class ID *",
+        label: "Class *",
         type: "select",
         options: [],
         gridCols: 6,
@@ -324,7 +324,7 @@ export const ENROLLMENT_STEPS = [
       },
       {
         id: "sectionId",
-        label: "Section ID *",
+        label: "Section *",
         type: "select",
         options: [],
         gridCols: 6,

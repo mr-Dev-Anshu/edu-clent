@@ -14,6 +14,51 @@ export interface StudentGuardian {
   canPickup?: boolean;
 }
 
+export interface StudentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  status: string;
+}
+
+export interface StudentEnrollmentSection {
+  id: string;
+  name: string;
+  capacity?: number;
+  class: {
+    id: string;
+    name: string;
+    numericLevel?: number;
+  };
+}
+
+export interface StudentEnrollmentAcademicYear {
+  id: string;
+  name: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+}
+
+export interface StudentEnrollmentData {
+  id: string;
+  rollNumber: string;
+  enrollmentStatus: string;
+  isCurrent: boolean;
+  section: StudentEnrollmentSection;
+  academicYear: StudentEnrollmentAcademicYear;
+}
+
+export interface StudentTenant {
+  id: string;
+  name: string;
+  organizationType: string;
+  officialEmail?: string;
+  subdomain?: string;
+}
+
 export interface StudentType extends Record<string, unknown> {
   id: string;
   tenantId: string;
@@ -50,6 +95,10 @@ export interface StudentType extends Record<string, unknown> {
   guardians?: StudentGuardian[];
   createdAt: string;
   updatedAt: string;
+  // Nested objects from API response
+  user?: StudentUser;
+  enrollment?: StudentEnrollmentData;
+  tenant?: StudentTenant;
 }
 
 export interface CreateStudentDto {

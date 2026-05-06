@@ -1,22 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Pencil, RefreshCw, UserRound } from "lucide-react";
+import { Pencil, RefreshCw, UserRound } from "lucide-react";
 import {
   AvatarCircle,
   EmptyState,
   SectionCard,
   StatusBadge,
 } from "@/common/components/shared";
-import { useHeader } from "@/hooks/useHeader";
 import { formatDate } from "@/lib/formator";
 import { useStudentService } from "../services/StudentService";
 import { StudentStatusDialog } from "./StudentStatusDialog";
 import { StudentGuardian, StudentStatus } from "../types";
 
-interface StudentProfileProps {
+interface StudentProfileModalProps {
   studentId: string;
+  onClose: () => void;
+  onEdit?: (studentId: string) => void;
 }
 
 const getFullName = (student?: {
@@ -82,7 +82,7 @@ const ProfileField = ({
 );
 
 const ProfileSkeleton = () => (
-  <div className="space-y-6 p-6">
+  <div className="space-y-6">
     <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <div className="h-72 animate-pulse rounded-2xl bg-slate-200" />
@@ -95,24 +95,14 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-export const StudentProfile = ({ studentId }: StudentProfileProps) => {
+export const StudentProfileModal = ({
+  studentId,
+  onClose,
+  onEdit,
+}: StudentProfileModalProps) => {
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const { data: student, isLoading, error } =
     useStudentService.useSingleData(studentId);
-
-  const headerConfig = useMemo(
-    () => ({
-      moduleName: "Students",
-      items: [
-        { label: "Directory", href: "/platform/students" },
-        { label: "Profile", href: `/platform/students/${studentId}` },
-      ],
-      actions: [],
-    }),
-    [studentId],
-  );
-
-  useHeader(headerConfig, () => {});
 
   if (isLoading) {
     return <ProfileSkeleton />;
@@ -120,27 +110,17 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
 
   if (!student) {
     return (
-      <div className="p-6">
-        <SectionCard>
-          <EmptyState
-            icon={UserRound}
-            title="Student profile not found"
-            description={
-              error instanceof Error
-                ? error.message
-                : "We couldn't load this student record."
-            }
-            action={
-              <Link
-                href="/platform/students"
-                className="inline-flex rounded-lg bg-[#1E3A5F] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#152d4a]"
-              >
-                Back to Directory
-              </Link>
-            }
-          />
-        </SectionCard>
-      </div>
+      <SectionCard>
+        <EmptyState
+          icon={UserRound}
+          title="Student profile not found"
+          description={
+            error instanceof Error
+              ? error.message
+              : "We couldn't load this student record."
+          }
+        />
+      </SectionCard>
     );
   }
 
@@ -150,7 +130,7 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
 
   return (
     <>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6">
         <SectionCard
           className="overflow-hidden"
           bodyClassName="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-6 text-white"
@@ -176,10 +156,10 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
                     Admission No. {student.admissionNumber}
                   </span>
                   <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
-                    Class {student.classId}
+                    Class {student.enrollment?.section.class.name ?? student.classId}
                   </span>
                   <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
-                    Section {student.sectionId}
+                    Section {student.enrollment?.section.name ?? student.sectionId}
                   </span>
                 </div>
                 <StatusBadge
@@ -191,20 +171,15 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/platform/students"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15"
-              >
-                <ArrowLeft size={16} />
-                Back to Directory
-              </Link>
-              <Link
-                href={`/platform/students/${student.id}/edit`}
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
-              >
-                <Pencil size={16} />
-                Edit Details
-              </Link>
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(student.id)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                >
+                  <Pencil size={16} />
+                  Edit Details
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setIsStatusDialogOpen(true)}
@@ -265,14 +240,14 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
                 label="Roll Number"
                 value={renderValue(student.rollNumber)}
               />
-              <ProfileField label="Class" value={renderValue(student.classId)} />
+              <ProfileField label="Class" value={renderValue(student.enrollment?.section.class.name ?? student.classId)} />
               <ProfileField
                 label="Section"
-                value={renderValue(student.sectionId)}
+                value={renderValue(student.enrollment?.section.name ?? student.sectionId)}
               />
               <ProfileField
                 label="Academic Year"
-                value={renderValue(student.academicYearId)}
+                value={renderValue(student.enrollment?.academicYear.name ?? student.academicYearId)}
               />
               <ProfileField
                 label="Enrollment Date"
@@ -306,7 +281,7 @@ export const StudentProfile = ({ studentId }: StudentProfileProps) => {
             description="Reachability, emergency, and support details."
           >
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <ProfileField label="Email" value={renderValue(student.email)} />
+              <ProfileField label="Email" value={renderValue(student.user?.email ?? student.email)} />
               <ProfileField
                 label="Emergency Contact"
                 value={renderValue(student.emergencyContactName)}
