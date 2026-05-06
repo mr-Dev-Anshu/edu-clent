@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { useHeader } from "@/hooks/useHeader";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { DataTable, FilterBar, Modal } from "@/common/components/shared"; 
 import { useStaff } from "./services/StaffService";
 import { columns, dashStats, headerConfig, staffFilterConfigs } from "./constant/CONFIG_DATA";
@@ -24,10 +25,27 @@ const StaffPage = () => {
     filters
   );
 
-  const handleFilterChange = (id: string, val: string) => {
-    setFilters(prev => ({ ...prev, [id]: val === 'all' ? "" : val }));
-    setPage(1);
-  };
+  // Debounced handler for search input (500ms delay)
+  const debouncedSearchChange = useDebouncedCallback(
+    (searchValue: string) => {
+      setFilters(prev => ({ ...prev, search: searchValue }));
+      setPage(1);
+    },
+    500
+  );
+
+  // Regular handler for other filters
+  const handleFilterChange = useCallback(
+    (id: string, val: string) => {
+      if (id === "search") {
+        debouncedSearchChange(val === 'all' ? "" : val);
+      } else {
+        setFilters(prev => ({ ...prev, [id]: val === 'all' ? "" : val }));
+        setPage(1);
+      }
+    },
+    [debouncedSearchChange]
+  );
 
   // 🔥 Header actions handle kar rahe hain
   useHeader(headerConfig, (eventName) => {

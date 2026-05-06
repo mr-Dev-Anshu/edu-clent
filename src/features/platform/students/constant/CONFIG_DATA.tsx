@@ -36,7 +36,7 @@ export const getStudentTableColumns = (
           {row.firstName} {row.lastName}
         </span>
         <span className="text-[11px] text-slate-400">
-          {row.classId} / {row.sectionId}
+          {row.user.email}
         </span>
       </div>
     ),
@@ -69,27 +69,26 @@ export const getStudentTableColumns = (
         status={row.status === "transferred" ? "inactive" : row.status}
         label={row.status === "transferred" ? "Transferred" : undefined}
         dot
-        size="sm"
-      />
+        size="sm" />
     ),
   },
   {
     header: "Class",
-    key: "classId",
+    key: "enrollment",
     width: "120px",
-    render: (value) => (
+    render: (_value, row) => (
       <span className="text-[12px] font-medium text-slate-600">
-        {String(value)}
+        {row.enrollment?.section?.class?.name ?? "-"}
       </span>
     ),
   },
   {
     header: "Section",
-    key: "sectionId",
+    key: "enrollment",
     width: "120px",
-    render: (value) => (
+    render: (_value, row) => (
       <span className="text-[12px] font-medium text-slate-600">
-        {String(value)}
+        {row.enrollment?.section?.name ?? "-"}
       </span>
     ),
   },
@@ -136,8 +135,7 @@ export const getStudentTableColumns = (
             icon: RefreshCw,
             onClick: () => handlers.onChangeStatus(row),
           },
-        ]}
-      />
+        ]} />
     ),
   },
 ];
@@ -168,10 +166,17 @@ export const FILTER_CONFIGS: FilterConfig[] = [
     ],
   },
   {
-    id: "classId",
-    label: "Class",
+    id: "name",
+    label: "name",
     type: "text",
-    placeholder: "Filter by class ID",
+    placeholder: "Filter by name",
+    width: "220px",
+  },
+  {
+    id: "admissionNumber",
+    label: "Admission no",
+    type: "text",
+    placeholder: "Filter by Adm-no",
     width: "220px",
   },
 ];

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { DataTable, FilterBar, Modal } from "@/common/components/shared";
 import { useHeader } from "@/hooks/useHeader";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { SortState } from "@/types";
 import { StudentEnrollment } from "./components/StudentEnrollment";
 import { StudentStatusDialog } from "./components/StudentStatusDialog";
@@ -24,7 +25,8 @@ export const StudentPage = () => {
   const [filters, setFilters] = useState({
     gender: "",
     status: "",
-    classId: "",
+    name: "",
+    email:""
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentType | null>(
@@ -45,13 +47,46 @@ export const StudentPage = () => {
     isFetching,
   } = useStudentService.usePaginatedData(page, pageSize, filters);
 
-  const handleFilterChange = (id: string, value: string) => {
-    setFilters((previous) => ({
-      ...previous,
-      [id]: value === "all" ? "" : value,
-    }));
-    setPage(1);
-  };
+  // Debounced handlers for search inputs (500ms delay)
+  const debouncedNameChange = useDebouncedCallback(
+    (nameValue: string) => {
+      setFilters((previous) => ({
+        ...previous,
+        name: nameValue,
+      }));
+      setPage(1);
+    },
+    500
+  );
+
+  const debouncedEmailChange = useDebouncedCallback(
+    (emailValue: string) => {
+      setFilters((previous) => ({
+        ...previous,
+        email: emailValue,
+      }));
+      setPage(1);
+    },
+    500
+  );
+
+  // Regular handler for other filters
+  const handleFilterChange = useCallback(
+    (id: string, value: string) => {
+      if (id === "name") {
+        debouncedNameChange(value === "all" ? "" : value);
+      } else if (id === "email") {
+        debouncedEmailChange(value === "all" ? "" : value);
+      } else {
+        setFilters((previous) => ({
+          ...previous,
+          [id]: value === "all" ? "" : value,
+        }));
+        setPage(1);
+      }
+    },
+    [debouncedNameChange, debouncedEmailChange]
+  );
 
   const handleSort = (key: string) => {
     setSort((current) => {
