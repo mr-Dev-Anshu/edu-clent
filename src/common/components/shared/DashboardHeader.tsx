@@ -15,6 +15,8 @@ interface HeaderAction {
   icon?: LucideIcon;
   variant?: 'primary' | 'secondary' | 'outline'; 
   isHidden?: boolean; 
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 interface DashboardHeaderProps {
@@ -82,7 +84,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <button 
                     key={idx}
                     onClick={btn.onClick}
-                    className={`flex items-center cursor-pointer justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all min-w-25 ${getBtnStyles(btn.variant)}`}
+                    aria-disabled={btn.disabled}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all min-w-25 ${getBtnStyles(btn.variant)} ${btn.disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                   >
                     {btn.icon && <btn.icon size={18} />}
                     <span className="whitespace-nowrap">{btn.label}</span>

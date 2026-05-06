@@ -9,6 +9,7 @@ export interface FilterConfig {
   width?: string;
   options?: { label: string; value: string }[];
   defaultValue?: string;
+  value?: string;
 }
 
 interface FilterBarProps {
@@ -54,7 +55,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               ) : (
                 <div className="relative">
                   <select
-                    defaultValue={field.defaultValue}
+                    {...(field.value !== undefined ? { value: field.value } : { defaultValue: field.defaultValue })}
                     onChange={(e) => onFilterChange(field.id, e.target.value)}
                     className="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-[13.5px] font-semibold text-slate-700 appearance-none focus:bg-white focus:border-blue-500/40 focus:ring-4 focus:ring-blue-500/5 focus:outline-none cursor-pointer transition-all duration-300"
                   >
