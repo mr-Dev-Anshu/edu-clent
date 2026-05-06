@@ -49,7 +49,7 @@ export const DynamicArrayField = ({ section }: { section: any }) => {
         onClick={() => append({})}
         className="mt-4 flex items-center gap-2 px-6 py-3 border-2 border-dashed border-slate-200 rounded-xl text-indigo-600 font-bold text-xs uppercase tracking-widest hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
       >
-        <Plus size={16} /> Add Fee Head
+        <Plus size={16} /> {section.addButtonText || "Add Item"}
       </button>
 
       {section.infoText && (

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Bell, History, Search, LucideIcon } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
+import { PermissionGuard } from '@/hoc/PermissionGuard';
 
 interface NavItem {
   label: string;
@@ -15,6 +16,11 @@ interface HeaderAction {
   icon?: LucideIcon;
   variant?: 'primary' | 'secondary' | 'outline'; 
   isHidden?: boolean; 
+  permission?: string;
+  anyOf?: string[];
+  allOf?: string[];
+  roles?: string | string[];
+  fallback?: React.ReactNode;
 }
 
 interface DashboardHeaderProps {
@@ -28,7 +34,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   moduleName,
   headerNavItems,
   actions = [],
-  onSearchChange
 }) => {
   
   // Style mapping logic
@@ -78,16 +83,34 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
               {actions
                 .filter(action => !action.isHidden)
-                .map((btn, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={btn.onClick}
-                    className={`flex items-center cursor-pointer justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all min-w-25 ${getBtnStyles(btn.variant)}`}
-                  >
-                    {btn.icon && <btn.icon size={18} />}
-                    <span className="whitespace-nowrap">{btn.label}</span>
-                  </button>
-                ))}
+                .map((btn, idx) => {
+                  const actionButton = (
+                    <button 
+                      onClick={btn.onClick}
+                      className={`flex items-center cursor-pointer justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all min-w-25 ${getBtnStyles(btn.variant)}`}
+                    >
+                      {btn.icon && <btn.icon size={18} />}
+                      <span className="whitespace-nowrap">{btn.label}</span>
+                    </button>
+                  );
+
+                  if (!btn.permission && !btn.anyOf && !btn.allOf && !btn.roles) {
+                    return <React.Fragment key={idx}>{actionButton}</React.Fragment>;
+                  }
+
+                  return (
+                    <PermissionGuard
+                      key={idx}
+                      permission={btn.permission}
+                      anyOf={btn.anyOf}
+                      allOf={btn.allOf}
+                      roles={btn.roles}
+                      fallback={btn.fallback}
+                    >
+                      {actionButton}
+                    </PermissionGuard>
+                  );
+                })}
             </div>
           </div>
         </div>
