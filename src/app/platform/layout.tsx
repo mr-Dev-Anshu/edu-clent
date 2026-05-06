@@ -8,6 +8,7 @@ import DashboardHeader from "@/common/components/shared/DashboardHeader";
 import { PLATFORM_SIDEBAR } from "@/config/sideBarConfig";
 import * as Icons from "lucide-react";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 const PlatformLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -34,6 +35,11 @@ const PlatformLayout = ({ children }: { children: React.ReactNode }) => {
     ...action,
     icon: action.iconName ? (Icons as any)[action.iconName] : undefined,
     onClick: () => {
+      if (action.disabled) {
+        toast.error(action.disabledReason || "This action is not available right now.");
+        return;
+      }
+
       const event = new CustomEvent("header-action-trigger", {
         detail: { eventName: action.emitEvent },
       });

@@ -24,13 +24,9 @@ type ApiError = {
   message?: string;
 };
 
-// export const manageSectionsFormSteps = [
-//   { id: 0, title: "Sections", sections: ["sections"] },
-// ];
-
 export const manageSectionsFormSteps = [
-    { id: 0, title: "Organization", sections: ["step2_details", "sections"] },
-  ];
+  { id: 0, title: "Organization", sections: ["step2_details", "sections"] },
+];
 
 export const ManageSectionsForm = ({
   classData,
@@ -55,6 +51,35 @@ export const ManageSectionsForm = ({
     (s) => s.academicYearId === currentAcademicYearId
   );
 
+  // Helper: Get academic year ID for new section
+  const getAcademicYearId = (section: SectionFormValue): string => {
+    return section.academicYearId || classData.sections[0]?.academicYearId || currentAcademicYearId || "";
+  };
+
+  // Helper: Build section payload (update or create)
+  const buildSectionPayload = (section: SectionFormValue, includeClassId = false) => ({
+    name: section.name?.trim() || "",
+    capacity: Number.parseInt(String(section.capacity), 10) || 40,
+    ...(section.classTeacherId?.toString().trim() && { classTeacherId: section.classTeacherId.toString().trim() }),
+    ...(includeClassId && { classId: classData.id, academicYearId: getAcademicYearId(section) }),
+  });
+
+  // Helper: Execute operation with error handling
+  const executeOperation = async (
+    operation: () => Promise<unknown>,
+    errorPrefix: string,
+    sectionName?: string
+  ): Promise<string | null> => {
+    try {
+      await operation();
+      return null;
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const msg = err.response?.data?.message || err.message || "Failed";
+      return `${errorPrefix}: ${msg}${sectionName ? ` ("${sectionName}")` : ""}`;
+    }
+  };
+
   const handleSubmit = async (formData: ManageSectionsFormValues) => {
     try {
       setIsUpdating(true);
@@ -63,115 +88,58 @@ export const ManageSectionsForm = ({
         (section) => section.id || (section.name && section.name.trim()),
       );
 
-      if (!submitted.length) {
-        toast.error("Please add at least one section");
-        setIsUpdating(false);
-        return;
-      }
-
+      // Check for duplicate names
       const sectionNames = submitted
-        .filter((section): section is SectionFormValue & { name: string } => Boolean(section.name && section.name.trim()))
-        .map((section) => section.name.trim().toLowerCase());
+        .filter((s): s is SectionFormValue & { name: string } => Boolean(s.name?.trim()))
+        .map((s) => s.name.toLowerCase());
 
-      const uniqueNames = new Set(sectionNames);
-      if (uniqueNames.size !== sectionNames.length) {
-        toast.error("Section names must be unique. You have duplicate section names.");
-        setIsUpdating(false);
+      if (new Set(sectionNames).size !== sectionNames.length) {
+        toast.error("Section names must be unique.");
         return;
       }
 
-      const originalIds = initialSections.map((section) => section.id);
-      const submittedIds = submitted.filter((section) => section.id).map((section) => section.id as string);
+      const errors: (string | null)[] = [];
+      const originalIds = initialSections.map((s) => s.id);
+      const submittedIds = submitted.filter((s) => s.id).map((s) => s.id as string);
 
-      const toDelete = originalIds.filter((id) => !submittedIds.includes(id));
-      const toUpdate = submitted.filter((section) => section.id);
-      const toCreate = submitted.filter((section) => !section.id && section.name && section.name.trim());
-
-      const errors: string[] = [];
-
-      for (const id of toDelete) {
-        try {
-          await deleteSection.mutateAsync(id);
-        } catch (error: unknown) {
-          const sectionError = error as ApiError;
-          const errMsg = sectionError.response?.data?.message || sectionError.message || "Delete failed";
-          errors.push(`Delete failed: ${errMsg}`);
-        }
+      // Delete removed sections
+      for (const id of originalIds.filter((id) => !submittedIds.includes(id))) {
+        const err = await executeOperation(() => deleteSection.mutateAsync(id), "Delete failed");
+        if (err) errors.push(err);
       }
 
-      for (const section of toUpdate) {
-        try {
-          if (!section.name || !section.name.trim()) {
-            throw new Error("Section name cannot be empty");
-          }
-
-          const payload: {
-            name: string;
-            capacity: number;
-            classTeacherId?: string;
-          } = {
-            name: section.name.trim(),
-            capacity: Number.parseInt(String(section.capacity), 10) || 40,
-          };
-
-          if (section.classTeacherId && typeof section.classTeacherId === "string" && section.classTeacherId.trim()) {
-            payload.classTeacherId = section.classTeacherId.trim();
-          }
-
-          await updateSection.mutateAsync({ id: section.id as string, data: payload });
-        } catch (error: unknown) {
-          const sectionError = error as ApiError;
-          const errMsg = sectionError.response?.data?.message || sectionError.message || "Update failed";
-          errors.push(`Update "${section.name}" failed: ${errMsg}`);
+      // Update existing sections
+      for (const section of submitted.filter((s) => s.id)) {
+        if (!section.name?.trim()) {
+          errors.push("Section name cannot be empty");
+          continue;
         }
+        const err = await executeOperation(
+          () => updateSection.mutateAsync({ id: section.id as string, data: buildSectionPayload(section) }),
+          "Update failed",
+          section.name
+        );
+        if (err) errors.push(err);
       }
 
-      for (const section of toCreate) {
-        try {
-          if (!section.name || !section.name.trim()) {
-            throw new Error("Section name cannot be empty");
-          }
-
-          let academicYearId = section.academicYearId;
-          if (!academicYearId) {
-            if (classData.sections[0]?.academicYearId) {
-              academicYearId = classData.sections[0].academicYearId;
-            } else if (currentAcademicYearId) {
-              academicYearId = currentAcademicYearId;
-            }
-          }
-
-          if (!academicYearId) {
-            throw new Error("Unable to determine academic year for new section");
-          }
-
-          const payload: {
-            name: string;
-            classId: string;
-            academicYearId: string;
-            capacity: number;
-            classTeacherId?: string;
-          } = {
-            name: section.name.trim(),
-            classId: classData.id,
-            academicYearId,
-            capacity: Number.parseInt(String(section.capacity), 10) || 40,
-          };
-
-          if (section.classTeacherId && typeof section.classTeacherId === "string" && section.classTeacherId.trim()) {
-            payload.classTeacherId = section.classTeacherId.trim();
-          }
-
-          await createSection.mutateAsync(payload);
-        } catch (error: unknown) {
-          const sectionError = error as ApiError;
-          const errMsg = sectionError.response?.data?.message || sectionError.message || "Creation failed";
-          errors.push(`Create "${section.name}" failed: ${errMsg}`);
+      // Create new sections
+      for (const section of submitted.filter((s) => !s.id && s.name?.trim())) {
+        const academicYearId = getAcademicYearId(section);
+        if (!academicYearId) {
+          errors.push("Unable to determine academic year");
+          continue;
         }
+        const payload = { ...buildSectionPayload(section, true), academicYearId };
+        const err = await executeOperation(
+          () => createSection.mutateAsync(payload),
+          "Create failed",
+          section.name
+        );
+        if (err) errors.push(err);
       }
 
       if (errors.length > 0) {
-        toast.error(errors[0]);
+        toast.error(errors[0] || "Operation failed");
         setIsUpdating(false);
         return;
       }
@@ -179,11 +147,14 @@ export const ManageSectionsForm = ({
       toast.success("Sections saved successfully!");
       onSuccess();
       onClose();
+      
+      // Refresh queries
+      void queryClient.refetchQueries({ queryKey: ["sections"] });
       void queryClient.refetchQueries({ queryKey: ["classes-with-sections"] });
+      void queryClient.refetchQueries({ queryKey: [`class-sections-${classData.id}`], exact: false });
     } catch (error: unknown) {
-      const sectionError = error as ApiError;
-      const errMsg = sectionError.response?.data?.message || sectionError.message || "Failed to save sections";
-      toast.error(errMsg);
+      const err = error as ApiError;
+      toast.error(err.response?.data?.message || err.message || "Failed to save sections");
     } finally {
       setIsUpdating(false);
     }

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import AnalysisCard from "@/common/components/shared/AnalysisCard";
 import { useHeader } from "@/hooks/useHeader";
+import { useRouter } from "next/navigation";
 import { DataTable, DeleteConfirmDialog, FilterBar, Modal } from "@/common/components/shared";
 import { useClassWithSections, useAcademicYear, useClass, AcademicYear, PaginatedResponse } from "./services/ClassService";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
@@ -13,6 +14,7 @@ import { ClassBulkImporter } from "./components/ClassBulkImporter";
 import { toast } from "sonner";
 
 const ClassesPage = () => {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
@@ -35,6 +37,7 @@ const ClassesPage = () => {
   const fallbackAcademicYearId = academicYears.find((year) => year.isCurrent)?.id;
   const selectedAcademicYearId = filters.academicYearId || currentAcademicYear?.id || fallbackAcademicYearId || "";
   const canManageSections = Boolean(currentAcademicYear?.id && selectedAcademicYearId === currentAcademicYear.id);
+  const selectedAcademicYearName = academicYears.find((year) => year.id === selectedAcademicYearId)?.name;
   const manageSectionsDisabledReason = currentAcademicYear?.name
     ? `You can only manage sections for the current academic year. Switch back to ${currentAcademicYear.name} to continue.`
     : "You can only manage sections for the current academic year.";
@@ -78,6 +81,20 @@ const ClassesPage = () => {
     }
 
     switch (action) {
+      case 'view': {
+        const params = new URLSearchParams({
+          classId: selectedRowData.id,
+          academicYearId: selectedAcademicYearId,
+          className: selectedRowData.name,
+          academicYearName:
+            selectedRowData.sections?.[0]?.academicYear?.name ||
+            selectedAcademicYearName ||
+            "",
+          totalEnrollment: String(selectedRowData.totalEnrollment ?? 0),
+        });
+        router.push(`/platform/classes/sections?${params.toString()}`);
+        break;
+      }
       case 'edit':
         setSelectedClass(selectedRowData as ClassWithSections);
         setIsEditClassFormOpen(true);
@@ -101,9 +118,8 @@ const ClassesPage = () => {
   const tableData = paginatedData.map((cls: ClassWithSections) => {
     return {
       ...cls,
-      enrollment: "0",
+      enrollment: String(cls.totalEnrollment ?? 0),
       classTeacher: "TBD",
-      status: "active",
       onActionClick: handleActionClick,
       canManageSections,
       manageSectionsDisabledReason,

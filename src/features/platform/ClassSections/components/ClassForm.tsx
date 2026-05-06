@@ -68,12 +68,6 @@ export const ClassForm = ({ onCancel, onSuccess }: ClassFormProps) => {
             typeof section.name === "string" && section.name.trim() !== "",
         );
 
-      if (sections.length === 0) {
-        toast.error("Please add at least one section");
-        setIsCreating(false);
-        return;
-      }
-
       const sectionNames = sections.map((section) => section.name.trim().toLowerCase());
       const uniqueNames = new Set(sectionNames);
       if (uniqueNames.size !== sectionNames.length) {
@@ -82,9 +76,9 @@ export const ClassForm = ({ onCancel, onSuccess }: ClassFormProps) => {
         return;
       }
 
-      // Get current academic year ID
+      // Get current academic year only when sections are being created now.
       const academicYearId = currentAcademicYear?.id;
-      if (!academicYearId) {
+      if (sections.length > 0 && !academicYearId) {
         toast.error("Unable to determine current academic year");
         setIsCreating(false);
         return;
@@ -103,6 +97,14 @@ export const ClassForm = ({ onCancel, onSuccess }: ClassFormProps) => {
       
       if (!createdClassId) {
         toast.error("Failed to create class - no ID returned");
+        setIsCreating(false);
+        return;
+      }
+
+      if (sections.length === 0) {
+        toast.success("Class created successfully! You can add sections later.");
+        queryClient.refetchQueries({ queryKey: ["classes-with-sections"] });
+        onSuccess?.();
         setIsCreating(false);
         return;
       }

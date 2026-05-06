@@ -125,7 +125,7 @@ export const classColumns = [
     key: "sections",
     width: "200px",
     render: (sections: Section[]) => {
-      const displaySections = sections.slice(0, 2);
+      const displaySections = sections.slice(0, 4);
       const remaining = sections.length - displaySections.length;
       
       return (
@@ -145,38 +145,12 @@ export const classColumns = [
     },
   },
   {
-    header: "Class Teacher",
-    key: "classTeacher",
-    width: "180px",
-    render: (val: string) => (
-      <span className="text-[12px] font-medium text-slate-600">
-        {val || "Not Assigned"}
-      </span>
-    ),
-  },
-  {
     header: "Enrollment",
     key: "enrollment",
     width: "160px",
     render: (val: string) => (
       <span className="text-[12px] font-semibold text-slate-600">
         {val} Students
-      </span>
-    ),
-  },
-  {
-    header: "Status",
-    key: "status",
-    width: "120px",
-    render: (val: string) => (
-      <span
-        className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
-          val === "active"
-            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-            : "bg-slate-50 text-slate-600 border-slate-100"
-        }`}
-      >
-        {val}
       </span>
     ),
   },
@@ -236,6 +210,7 @@ export interface ClassWithSections {
   name: string;
   numericLevel: number;
   description?: string;
+  totalEnrollment?: number;
   sections: Section[];
   tenantId: string;
   createdAt: string;

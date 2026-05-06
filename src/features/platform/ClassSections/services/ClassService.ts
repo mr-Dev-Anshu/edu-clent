@@ -36,6 +36,7 @@ export interface Section {
   classId: string;
   academicYearId: string;
   capacity: number;
+  enrolledCount?: number;
   classTeacherId?: string;
   classTeacher?: ClassTeacher;
   academicYear?: AcademicYearInfo;
@@ -45,6 +46,7 @@ export interface Section {
 }
 
 export interface ClassWithSections extends Class {
+  totalEnrollment?: number;
   sections: Section[];
 }
 

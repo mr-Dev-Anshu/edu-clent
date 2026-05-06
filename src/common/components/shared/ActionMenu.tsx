@@ -61,7 +61,6 @@ export const ActionMenu = ({ actions }: ActionMenuProps) => {
                   action.onClick();
                 }}
                 aria-disabled={action.disabled}
-                title={action.disabledReason}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors w-full text-left",
                   action.variant === "danger"

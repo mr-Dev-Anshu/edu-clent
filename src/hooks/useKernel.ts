@@ -27,7 +27,7 @@ export const kernelHook = <T, CreateDto, UpdateDto>(
     const qc = useQueryClient();
     return useMutation({
       mutationFn: kernel.create,
-      onSuccess: () => qc.refetchQueries({ queryKey: [key] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [key] }),
     });
   },
 
@@ -36,7 +36,7 @@ export const kernelHook = <T, CreateDto, UpdateDto>(
     return useMutation({
       mutationFn: ({ id, data }: { id: string | number; data: UpdateDto }) => 
         kernel.update(id, data),
-      onSuccess: () => qc.refetchQueries({ queryKey: [key] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [key] }),
     });
   },
 
@@ -44,7 +44,7 @@ export const kernelHook = <T, CreateDto, UpdateDto>(
     const qc = useQueryClient();
     return useMutation({
       mutationFn: kernel.remove,
-      onSuccess: () => qc.refetchQueries({ queryKey: [key] }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [key] }),
     });
   },
 });

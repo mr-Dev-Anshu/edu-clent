@@ -6,6 +6,8 @@ interface HeaderState {
     iconName?: string; 
     variant?: 'primary' | 'secondary' | 'outline';
     emitEvent: string;
+    disabled?: boolean;
+    disabledReason?: string;
   }[];
   items: { label: string; href: string }[];
 }
